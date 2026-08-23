@@ -13,6 +13,7 @@ import {
 
 import AppHeader from "../../../components/navigation/AppHeader";
 import GlassCard from "../../../components/ui/GlassCard";
+import { useTodaySchedules } from "../../../features/schedule";
 import { supabase } from "../../../lib/supabase/client";
 
 type Task = {
@@ -27,21 +28,6 @@ type Task = {
   completed_at: string | null;
   created_at: string;
   updated_at: string;
-};
-
-type Subject = {
-  id: string;
-  workspace_id: string;
-  name: string;
-  description: string | null;
-  schedule_enabled: boolean;
-  lecturer: string | null;
-  room: string | null;
-  day_of_week: number | null;
-  start_time: string | null;
-  end_time: string | null;
-  reminder_enabled: boolean;
-  reminder_minutes: number;
 };
 
 type Workspace = {
@@ -63,7 +49,6 @@ type DashboardData = {
   completedTasks: number;
   remainingTasks: number;
   upcomingTasks: Task[];
-  todaySchedules: Subject[];
   workspaces: Workspace[];
   workspaceTaskCounts: WorkspaceTaskCount;
 };
@@ -73,7 +58,6 @@ const INITIAL_DATA: DashboardData = {
   completedTasks: 0,
   remainingTasks: 0,
   upcomingTasks: [],
-  todaySchedules: [],
   workspaces: [],
   workspaceTaskCounts: {},
 };
@@ -121,10 +105,6 @@ function formatScheduleTime(time: string | null) {
 
 function formatScheduleRange(startTime: string | null, endTime: string | null) {
   return `${formatScheduleTime(startTime)} - ${formatScheduleTime(endTime)}`;
-}
-
-function getTodayDayOfWeek() {
-  return new Date().getDay();
 }
 
 async function fetchDashboardData(userId: string): Promise<DashboardData> {
@@ -244,36 +224,6 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   const workspaces = Array.from(workspaceMap.values());
   const workspaceIds = workspaces.map((workspace) => workspace.id);
 
-  let todaySchedules: Subject[] = [];
-
-  if (workspaceIds.length > 0) {
-    const { data: subjects, error: subjectsError } = await supabase
-      .from("subjects")
-      .select(
-        `
-            id,
-            workspace_id,
-            name,
-            description,
-            schedule_enabled,
-            lecturer,
-            room,
-            day_of_week,
-            start_time,
-            end_time,
-            reminder_enabled,
-            reminder_minutes
-          `,
-      )
-      .in("workspace_id", workspaceIds)
-      .eq("schedule_enabled", true)
-      .eq("day_of_week", getTodayDayOfWeek())
-      .order("start_time", { ascending: true });
-
-    if (subjectsError) throw subjectsError;
-    todaySchedules = (subjects ?? []) as Subject[];
-  }
-
   const workspaceTaskCounts: WorkspaceTaskCount = {};
   workspaces.forEach((workspace) => {
     workspaceTaskCounts[workspace.id] = activeTasks.filter(
@@ -286,7 +236,6 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
     completedTasks: completedToday.length,
     remainingTasks: remainingTasks.length,
     upcomingTasks,
-    todaySchedules,
     workspaces,
     workspaceTaskCounts,
   };
@@ -297,6 +246,11 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<
+    string | undefined
+  >(undefined);
+
+  const { data: todaySchedules = [] } = useTodaySchedules(currentWorkspaceId);
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -311,6 +265,11 @@ export default function Dashboard() {
 
       const dashboardData = await fetchDashboardData(user.id);
       setData(dashboardData);
+
+      // Set first workspace for schedules
+      if (dashboardData.workspaces.length > 0) {
+        setCurrentWorkspaceId(dashboardData.workspaces[0].id);
+      }
     } catch (err) {
       console.error("[Dashboard] Failed to load:", err);
       setError(err instanceof Error ? err.message : "Gagal memuat dashboard.");
@@ -451,7 +410,7 @@ export default function Dashboard() {
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Today's Schedule</Text>
-            {data.todaySchedules.length === 0 ? (
+            {todaySchedules.length === 0 ? (
               <GlassCard>
                 <View style={styles.emptyState}>
                   <Ionicons name="calendar-outline" size={28} color="#8E998F" />
@@ -463,17 +422,17 @@ export default function Dashboard() {
               </GlassCard>
             ) : (
               <View style={styles.scheduleContainer}>
-                {data.todaySchedules.map((schedule) => (
+                {todaySchedules.map((schedule) => (
                   <GlassCard key={schedule.id} style={styles.scheduleCard}>
                     <View style={styles.scheduleRow}>
                       <Text style={styles.scheduleTime}>
                         {formatScheduleRange(
-                          schedule.start_time,
-                          schedule.end_time,
+                          schedule.startTime,
+                          schedule.endTime,
                         )}
                       </Text>
                       <Text style={styles.scheduleTitle} numberOfLines={1}>
-                        {schedule.name}
+                        {schedule.subject?.name ?? "Subject"}
                       </Text>
                     </View>
                   </GlassCard>

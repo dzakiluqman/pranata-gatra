@@ -1,29 +1,21 @@
-import {
-    Controller,
-    useForm,
-} from 'react-hook-form';
+import { Controller, useForm } from "react-hook-form";
 
 import {
-    Alert,
-    Pressable,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
-} from 'react-native';
+  Alert,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
-import {
-    zodResolver,
-} from '@hookform/resolvers/zod';
+import { zodResolver } from "@hookform/resolvers/zod";
 
-import {
-    emailSchema,
-    type EmailFormValues,
-} from '../schemas/authSchemas';
+import { emailSchema, type EmailFormValues } from "../schemas/authSchemas";
 
-import { useAuth } from '../hooks/useAuth';
+import { useAuth } from "../hooks/useAuth";
 
-import { router } from 'expo-router';
+import { router } from "expo-router";
 
 export default function RegisterForm() {
   const { sendEmailOtp } = useAuth();
@@ -35,40 +27,37 @@ export default function RegisterForm() {
   } = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
-      email: '',
+      email: "",
     },
   });
 
-  const onSubmit = async (
-    values: EmailFormValues,
-  ) => {
-    const { error } =
-      await sendEmailOtp({
+  const onSubmit = async (values: EmailFormValues) => {
+    const { error } = await sendEmailOtp(
+      {
         email: values.email,
-      });
+      },
+      {
+        shouldCreateUser: true,
+      },
+    );
 
     if (error) {
-      Alert.alert(
-        'Registrasi gagal',
-        error.message,
-      );
+      Alert.alert("Registrasi gagal", error.message);
       return;
     }
 
     router.push({
-      pathname: '/(auth)/verify-otp',
+      pathname: "/(auth)/verify-otp",
       params: {
         email: values.email,
-        mode: 'register',
+        mode: "register",
       },
     });
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
-        Buat Akun
-      </Text>
+      <Text style={styles.title}>Buat Akun</Text>
 
       <Text style={styles.subtitle}>
         Masukkan email aktif untuk menerima kode OTP.
@@ -77,13 +66,7 @@ export default function RegisterForm() {
       <Controller
         control={control}
         name="email"
-        render={({
-          field: {
-            onChange,
-            onBlur,
-            value,
-          },
-        }) => (
+        render={({ field: { onChange, onBlur, value } }) => (
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -97,24 +80,15 @@ export default function RegisterForm() {
         )}
       />
 
-      {errors.email && (
-        <Text style={styles.error}>
-          {errors.email.message}
-        </Text>
-      )}
+      {errors.email && <Text style={styles.error}>{errors.email.message}</Text>}
 
       <Pressable
-        style={[
-          styles.button,
-          isSubmitting && styles.buttonDisabled,
-        ]}
+        style={[styles.button, isSubmitting && styles.buttonDisabled]}
         disabled={isSubmitting}
         onPress={handleSubmit(onSubmit)}
       >
         <Text style={styles.buttonText}>
-          {isSubmitting
-            ? 'Mengirim OTP...'
-            : 'Lanjut'}
+          {isSubmitting ? "Mengirim OTP..." : "Lanjut"}
         </Text>
       </Pressable>
     </View>
@@ -124,13 +98,13 @@ export default function RegisterForm() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 24,
   },
 
   title: {
     fontSize: 30,
-    fontWeight: '700',
+    fontWeight: "700",
   },
 
   subtitle: {
@@ -143,7 +117,7 @@ const styles = StyleSheet.create({
   input: {
     height: 52,
     borderWidth: 1,
-    borderColor: '#D1D5DB',
+    borderColor: "#D1D5DB",
     borderRadius: 12,
     paddingHorizontal: 16,
     fontSize: 16,
@@ -151,16 +125,16 @@ const styles = StyleSheet.create({
 
   error: {
     marginTop: 6,
-    color: '#DC2626',
+    color: "#DC2626",
   },
 
   button: {
     height: 52,
     marginTop: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: '#2563EB',
+    backgroundColor: "#2563EB",
   },
 
   buttonDisabled: {
@@ -168,8 +142,8 @@ const styles = StyleSheet.create({
   },
 
   buttonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

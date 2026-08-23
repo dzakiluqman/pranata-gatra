@@ -12,6 +12,8 @@ import {
   View,
 } from "react-native";
 
+import type { Schedule } from "@/features/schedule";
+import { formatRecurrence, useTodaySchedules } from "@/features/schedule";
 import { supabase } from "@/lib/supabase";
 
 type WorkspaceInvitation = {
@@ -38,13 +40,26 @@ type WorkspaceInvitation = {
   } | null;
 };
 
+function formatScheduleTime(value: string) {
+  return value.slice(0, 5).replace(":", ".");
+}
+
+function formatScheduleRange(start: string, end: string) {
+  return `${formatScheduleTime(start)} - ${formatScheduleTime(end)}`;
+}
+
 export default function NotificationsScreen() {
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<
+    string | undefined
+  >(undefined);
 
-  const loadInvitations = useCallback(async () => {
+  const { data: todaySchedules = [] } = useTodaySchedules(currentWorkspaceId);
+
+  const loadNotifications = useCallback(async () => {
     try {
       const {
         data: { user },
@@ -57,45 +72,49 @@ export default function NotificationsScreen() {
 
       if (!user?.email) {
         setInvitations([]);
+        setCurrentWorkspaceId(undefined);
         return;
       }
 
-      const { data, error } = await supabase
+      // Load invitations
+      const { data: invitationData, error: invitationError } = await supabase
         .from("workspace_invitations")
         .select(
           `
-          id,
-          workspace_id,
-          inviter_id,
-          invitee_email,
-          role,
-          token,
-          status,
-          expires_at,
-          accepted_at,
-          created_at,
-          workspace:workspaces (
-            id,
-            name,
-            description
-          ),
-          inviter:profiles!workspace_invitations_inviter_id_fkey (
-            id,
-            full_name,
-            email,
-            avatar_url
-          )
-        `,
+              id,
+              workspace_id,
+              inviter_id,
+              invitee_email,
+              role,
+              token,
+              status,
+              expires_at,
+              accepted_at,
+              created_at,
+              workspace:workspaces (
+                id,
+                name,
+                description
+              ),
+              inviter:profiles!workspace_invitations_inviter_id_fkey (
+                id,
+                full_name,
+                email,
+                avatar_url
+              )
+            `,
         )
         .ilike("invitee_email", user.email)
         .eq("status", "pending")
-        .order("created_at", { ascending: false });
+        .order("created_at", {
+          ascending: false,
+        });
 
-      if (error) {
-        throw error;
+      if (invitationError) {
+        throw invitationError;
       }
 
-      const normalized = (data ?? []).map((item: any) => ({
+      const normalizedInvitations = (invitationData ?? []).map((item: any) => ({
         ...item,
         workspace: Array.isArray(item.workspace)
           ? (item.workspace[0] ?? null)
@@ -105,15 +124,44 @@ export default function NotificationsScreen() {
           : item.inviter,
       }));
 
-      setInvitations(normalized);
+      setInvitations(normalizedInvitations);
+
+      // Fetch user's workspaces to set current workspace for schedules
+      const { data: ownedWorkspaces, error: ownedWorkspaceError } =
+        await supabase.from("workspaces").select("id").eq("owner_id", user.id);
+
+      if (ownedWorkspaceError) {
+        throw ownedWorkspaceError;
+      }
+
+      const { data: memberships, error: membershipError } = await supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id);
+
+      if (membershipError) {
+        throw membershipError;
+      }
+
+      const workspaceIds = Array.from(
+        new Set([
+          ...(ownedWorkspaces ?? []).map((workspace) => workspace.id),
+          ...(memberships ?? []).map((membership) => membership.workspace_id),
+        ]),
+      );
+
+      // Set first workspace to load schedules
+      if (workspaceIds.length > 0) {
+        setCurrentWorkspaceId(workspaceIds[0]);
+      }
     } catch (error) {
-      console.error("Failed to load invitations:", error);
+      console.error("Failed to load notifications:", error);
 
       Alert.alert(
         "Gagal memuat notifikasi",
         error instanceof Error
           ? error.message
-          : "Terjadi kesalahan saat mengambil invitation.",
+          : "Terjadi kesalahan saat mengambil notifikasi.",
       );
     } finally {
       setIsLoading(false);
@@ -122,12 +170,12 @@ export default function NotificationsScreen() {
   }, []);
 
   useEffect(() => {
-    loadInvitations();
-  }, [loadInvitations]);
+    loadNotifications();
+  }, [loadNotifications]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    await loadInvitations();
+    await loadNotifications();
   };
 
   const handleAccept = async (invitation: WorkspaceInvitation) => {
@@ -308,6 +356,65 @@ export default function NotificationsScreen() {
     );
   };
 
+  const renderSchedule = (schedule: Schedule) => {
+    const reminderTime = new Date(
+      `${schedule.occurrenceDate ?? ""}T${schedule.startTime}`,
+    );
+    reminderTime.setMinutes(
+      reminderTime.getMinutes() - (schedule.reminderMinutes || 0),
+    );
+
+    const reminderDisplay = `${reminderTime.getHours().toString().padStart(2, "0")}.${reminderTime.getMinutes().toString().padStart(2, "0")}`;
+
+    return (
+      <View key={schedule.id} style={styles.scheduleNotification}>
+        <View style={styles.scheduleIcon}>
+          <Ionicons name="calendar-outline" size={22} color="#A8D8A8" />
+        </View>
+
+        <View style={styles.scheduleContent}>
+          <View style={styles.scheduleHeader}>
+            <Text style={styles.scheduleTitle} numberOfLines={1}>
+              {schedule.subject?.name ?? "Subject"}
+            </Text>
+
+            <Text style={styles.scheduleTime}>
+              {formatScheduleRange(schedule.startTime, schedule.endTime)}
+            </Text>
+          </View>
+
+          <View style={styles.scheduleMetaRow}>
+            <Text style={styles.scheduleRecurrence}>
+              {formatRecurrence(schedule)}
+            </Text>
+
+            {schedule.reminderEnabled && (
+              <View style={styles.reminderBadge}>
+                <Ionicons
+                  name="notifications-outline"
+                  size={11}
+                  color="#A8D8A8"
+                />
+
+                <Text style={styles.reminderText}>
+                  Reminder {reminderDisplay}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {schedule.subject?.room && (
+            <View style={styles.roomRow}>
+              <Ionicons name="location-outline" size={12} color="#7F8A80" />
+
+              <Text style={styles.roomText}>{schedule.subject.room}</Text>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -320,6 +427,8 @@ export default function NotificationsScreen() {
     );
   }
 
+  const totalNotifications = invitations.length + todaySchedules.length;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
@@ -329,14 +438,12 @@ export default function NotificationsScreen() {
 
             <Text style={styles.title}>Notifikasi</Text>
 
-            <Text style={styles.subtitle}>
-              Kelola invitation workspace kamu.
-            </Text>
+            <Text style={styles.subtitle}>Invitation dan jadwal hari ini.</Text>
           </View>
 
-          {invitations.length > 0 && (
+          {totalNotifications > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{invitations.length}</Text>
+              <Text style={styles.badgeText}>{totalNotifications}</Text>
             </View>
           )}
         </View>
@@ -346,9 +453,6 @@ export default function NotificationsScreen() {
           keyExtractor={(item) => item.id}
           renderItem={renderInvitation}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={
-            invitations.length === 0 ? styles.emptyList : styles.listContent
-          }
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -356,23 +460,49 @@ export default function NotificationsScreen() {
               tintColor="#A8D8A8"
             />
           }
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons
-                  name="notifications-off-outline"
-                  size={34}
-                  color="#A8D8A8"
-                />
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            todaySchedules.length > 0 ? (
+              <View style={styles.scheduleSection}>
+                <View style={styles.sectionHeader}>
+                  <View>
+                    <Text style={styles.sectionEyebrow}>TODAY</Text>
+
+                    <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
+                  </View>
+
+                  <View style={styles.sectionBadge}>
+                    <Text style={styles.sectionBadgeText}>
+                      {todaySchedules.length}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.scheduleList}>
+                  {todaySchedules.map(renderSchedule)}
+                </View>
               </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            invitations.length === 0 && todaySchedules.length === 0 ? (
+              <View style={styles.emptyState}>
+                <View style={styles.emptyIcon}>
+                  <Ionicons
+                    name="notifications-off-outline"
+                    size={34}
+                    color="#A8D8A8"
+                  />
+                </View>
 
-              <Text style={styles.emptyTitle}>Tidak ada notifikasi</Text>
+                <Text style={styles.emptyTitle}>Tidak ada notifikasi</Text>
 
-              <Text style={styles.emptyDescription}>
-                Saat ada invitation workspace baru, notifikasi tersebut akan
-                muncul di sini.
-              </Text>
-            </View>
+                <Text style={styles.emptyDescription}>
+                  Saat ada invitation workspace atau jadwal hari ini, informasi
+                  tersebut akan muncul di sini.
+                </Text>
+              </View>
+            ) : null
           }
         />
       </View>
@@ -438,6 +568,139 @@ const styles = StyleSheet.create({
 
   listContent: {
     paddingBottom: 120,
+    flexGrow: 1,
+  },
+
+  scheduleSection: {
+    marginBottom: 22,
+  },
+
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+
+  sectionEyebrow: {
+    fontSize: 9,
+    fontWeight: "800",
+    letterSpacing: 1.4,
+    color: "#8DB88D",
+    marginBottom: 3,
+  },
+
+  sectionTitle: {
+    fontSize: 19,
+    fontWeight: "800",
+    color: "#F5F7F3",
+  },
+
+  sectionBadge: {
+    minWidth: 28,
+    height: 28,
+    paddingHorizontal: 8,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(168, 216, 168, 0.10)",
+    borderWidth: 1,
+    borderColor: "rgba(168, 216, 168, 0.15)",
+  },
+
+  sectionBadgeText: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#A8D8A8",
+  },
+
+  scheduleList: {
+    gap: 10,
+  },
+
+  scheduleNotification: {
+    flexDirection: "row",
+    padding: 15,
+    borderRadius: 18,
+    backgroundColor: "#151A15",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.07)",
+  },
+
+  scheduleIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(168, 216, 168, 0.12)",
+  },
+
+  scheduleContent: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  scheduleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+
+  scheduleTitle: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#F5F7F3",
+  },
+
+  scheduleTime: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#B9DAB9",
+  },
+
+  scheduleMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 7,
+  },
+
+  scheduleRecurrence: {
+    fontSize: 10,
+    color: "#A2AFA1",
+  },
+
+  reminderBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 7,
+    backgroundColor: "rgba(168, 216, 168, 0.07)",
+  },
+
+  reminderText: {
+    fontSize: 9,
+    color: "#A8D8A8",
+    fontWeight: "600",
+  },
+
+  roomRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 6,
+  },
+
+  roomText: {
+    fontSize: 10,
+    color: "#7F8A80",
   },
 
   card: {
@@ -589,16 +852,12 @@ const styles = StyleSheet.create({
     color: "rgba(245, 247, 243, 0.55)",
   },
 
-  emptyList: {
-    flexGrow: 1,
-    paddingBottom: 120,
-  },
-
   emptyState: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 30,
+    paddingVertical: 60,
   },
 
   emptyIcon: {

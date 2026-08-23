@@ -5,14 +5,11 @@ import {
     useEffect,
     useMemo,
     useState,
-} from 'react';
+} from "react";
 
-import type {
-    Session,
-    User,
-} from '@supabase/supabase-js';
+import type { Session, User } from "@supabase/supabase-js";
 
-import { supabase } from '@/lib/supabase';
+import { supabase } from "@/lib/supabase";
 
 interface AuthContextValue {
   session: Session | null;
@@ -20,31 +17,31 @@ interface AuthContextValue {
   isLoading: boolean;
 }
 
-const AuthContext =
-  createContext<AuthContextValue | undefined>(
-    undefined,
-  );
+const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-}: PropsWithChildren) {
-  const [session, setSession] =
-    useState<Session | null>(null);
+export function AuthProvider({ children }: PropsWithChildren) {
+  const [session, setSession] = useState<Session | null>(null);
 
-  const [isLoading, setIsLoading] =
-    useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     async function initializeAuth() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-      if (mounted) {
-        setSession(session);
-        setIsLoading(false);
+        if (mounted) {
+          setSession(session);
+        }
+      } catch (error) {
+        console.error("[AuthProvider] Failed to restore session:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -52,11 +49,10 @@ export function AuthProvider({
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setSession(session);
-      },
-    );
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setIsLoading(false);
+    });
 
     return () => {
       mounted = false;
@@ -73,20 +69,14 @@ export function AuthProvider({
     [session, isLoading],
   );
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuthContext() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error(
-      'useAuthContext must be used inside AuthProvider.',
-    );
+    throw new Error("useAuthContext must be used inside AuthProvider.");
   }
 
   return context;
