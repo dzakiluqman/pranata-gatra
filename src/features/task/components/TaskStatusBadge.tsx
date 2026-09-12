@@ -16,20 +16,21 @@ const STATUS_CONFIG: Record<
 > = {
   pending: {
     label: "Pending",
-    background: "#FFF7ED",
-    text: "#C2410C",
+    background: "rgba(245, 158, 11, 0.15)",
+    text: "#FBBF24",
   },
   in_progress: {
     label: "In Progress",
-    background: "#EFF6FF",
-    text: "#2563EB",
+    background: "rgba(168, 216, 168, 0.15)",
+    text: "#A8D8A8",
   },
   completed: {
     label: "Completed",
-    background: "#ECFDF5",
-    text: "#059669",
+    background: "rgba(74, 222, 128, 0.15)",
+    text: "#4ADE80",
   },
 };
+
 
 export function TaskStatusBadge({
   status,

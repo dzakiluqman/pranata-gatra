@@ -48,7 +48,7 @@ export function TaskList({
   if (isLoading && tasks.length === 0) {
     return (
       <View style={styles.centerState}>
-        <ActivityIndicator size="large" color="#1C5BFF" />
+        <ActivityIndicator size="large" color="#A8D8A8" />
 
         <Text style={styles.stateTitle}>Memuat tugas...</Text>
       </View>
@@ -59,7 +59,7 @@ export function TaskList({
     return (
       <View style={styles.centerState}>
         <View style={styles.stateIcon}>
-          <Ionicons name="cloud-offline-outline" size={28} color="#6B7280" />
+          <Ionicons name="cloud-offline-outline" size={28} color="#FF8A8A" />
         </View>
 
         <Text style={styles.stateTitle}>Gagal memuat tugas</Text>
@@ -70,7 +70,7 @@ export function TaskList({
 
         {onRetry ? (
           <Pressable onPress={onRetry} style={styles.retryButton}>
-            <Ionicons name="refresh-outline" size={16} color="#FFFFFF" />
+            <Ionicons name="refresh-outline" size={16} color="#0A0E0A" />
 
             <Text style={styles.retryText}>Coba Lagi</Text>
           </Pressable>
@@ -86,7 +86,7 @@ export function TaskList({
 
         <View style={styles.emptyState}>
           <View style={styles.stateIcon}>
-            <Ionicons name="checkbox-outline" size={30} color="#6B7280" />
+            <Ionicons name="checkbox-outline" size={30} color="#A8D8A8" />
           </View>
 
           <Text style={styles.stateTitle}>{emptyTitle}</Text>
@@ -122,7 +122,7 @@ export function TaskList({
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            tintColor="#1C5BFF"
+            tintColor="#A8D8A8"
           />
         ) : undefined
       }
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
@@ -168,14 +168,14 @@ const styles = StyleSheet.create({
   stateTitle: {
     fontSize: 17,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
     textAlign: "center",
   },
   stateDescription: {
     maxWidth: 300,
     fontSize: 13,
     lineHeight: 19,
-    color: "#6B7280",
+    color: "#8E998F",
     textAlign: "center",
   },
   retryButton: {
@@ -185,12 +185,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
     marginTop: 5,
   },
   retryText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#0A0E0A",
   },
 });
+

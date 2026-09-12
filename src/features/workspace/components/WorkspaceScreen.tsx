@@ -7,7 +7,6 @@ import {
     ActivityIndicator,
     FlatList,
     Pressable,
-    SafeAreaView,
     StyleSheet,
     Text,
     View,
@@ -17,35 +16,14 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWorkspaces } from "../hooks/useWorkspaces";
 import type { Workspace } from "../types/workspace.types";
 
-type WorkspaceWithExpiry = Workspace & {
-  expiresAt?: string | null;
-};
-
 const TAB_BAR_HEIGHT = 76;
 
 export default function WorkspaceScreen() {
   const insets = useSafeAreaInsets();
   const { workspaces = [], isLoading, error } = useWorkspaces();
 
-  const filteredWorkspaces = useMemo(() => workspaces, [workspaces]);
-
-  const { activeWorkspaces, expiredWorkspaces } = useMemo(() => {
-    const currentTime = Date.now();
-    const active: Workspace[] = [];
-    const expired: Workspace[] = [];
-
-    filteredWorkspaces.forEach((workspace) => {
-      const expiresAt = (workspace as WorkspaceWithExpiry).expiresAt;
-
-      if (expiresAt && new Date(expiresAt).getTime() <= currentTime) {
-        expired.push(workspace);
-      } else {
-        active.push(workspace);
-      }
-    });
-
-    return { activeWorkspaces: active, expiredWorkspaces: expired };
-  }, [filteredWorkspaces]);
+  const activeWorkspaces = useMemo(() => workspaces, [workspaces]);
+  const expiredWorkspaces: Workspace[] = useMemo(() => [], []);
 
   const handleOpenWorkspace = (workspaceId: string) => {
     router.push(`/(app)/workspace/${workspaceId}`);
@@ -117,18 +95,18 @@ export default function WorkspaceScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#F5F7F3" />
           <Text style={styles.loadingText}>Memuat workspace...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <View style={styles.errorContainer}>
           <Ionicons name="alert-circle-outline" size={34} color="#F5F7F3" />
           <Text style={styles.errorTitle}>Gagal memuat workspace</Text>
@@ -138,7 +116,7 @@ export default function WorkspaceScreen() {
               : "Terjadi kesalahan saat mengambil data."}
           </Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -153,13 +131,16 @@ export default function WorkspaceScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
         <View style={styles.container}>
           <FlatList
             data={[]}
             renderItem={null}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={[
+              styles.listContent,
+              { paddingBottom: Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 70 },
+            ]}
             ListHeaderComponent={
               <>
                 {renderSection("Active Workspaces", activeWorkspaces)}
@@ -176,10 +157,10 @@ export default function WorkspaceScreen() {
                         />
                       </View>
                       <Text style={styles.emptyTitle}>
-                        "Belum ada workspace"
+                        Belum ada workspace
                       </Text>
                       <Text style={styles.emptyDescription}>
-                        "Buat workspace pertama untuk mulai berkolaborasi."
+                        Buat workspace pertama untuk mulai berkolaborasi.
                       </Text>
                     </View>
                   )}
@@ -209,7 +190,7 @@ export default function WorkspaceScreen() {
             </BlurView>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     </View>
   );
 }

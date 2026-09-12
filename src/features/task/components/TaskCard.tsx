@@ -48,10 +48,6 @@ export function TaskCard({
   const priority = getTaskPriority(task.deadline);
 
   const handleStatusPress = () => {
-    if (task.status === "completed") {
-      return;
-    }
-
     onStatusChange?.();
   };
 
@@ -69,14 +65,14 @@ export function TaskCard({
       <View style={styles.topRow}>
         <Pressable
           onPress={handleStatusPress}
-          disabled={!onStatusChange || task.status === "completed"}
+          disabled={!onStatusChange}
           style={[
             styles.checkbox,
             task.status === "completed" && styles.checkboxCompleted,
           ]}
         >
           {task.status === "completed" ? (
-            <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+            <Ionicons name="checkmark" size={15} color="#0A0E0A" />
           ) : task.status === "in_progress" ? (
             <View style={styles.progressIndicator} />
           ) : null}
@@ -100,7 +96,7 @@ export function TaskCard({
           ) : null}
         </View>
 
-        <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+        <Ionicons name="chevron-forward" size={18} color="#8E998F" />
       </View>
 
       <View style={styles.metaRow}>
@@ -114,7 +110,7 @@ export function TaskCard({
           <Ionicons
             name="calendar-outline"
             size={15}
-            color={overdue ? "#DC2626" : "#6B7280"}
+            color={overdue ? "#FF8A8A" : "#8E998F"}
           />
 
           <Text
@@ -138,7 +134,7 @@ export function TaskCard({
         <View style={styles.relationsRow}>
           {task.subject ? (
             <View style={styles.relationItem}>
-              <Ionicons name="book-outline" size={14} color="#6B7280" />
+              <Ionicons name="book-outline" size={14} color="#8E998F" />
 
               <Text numberOfLines={1} style={styles.relationText}>
                 {task.subject.name}
@@ -148,7 +144,7 @@ export function TaskCard({
 
           {task.assignee ? (
             <View style={styles.relationItem}>
-              <Ionicons name="person-outline" size={14} color="#6B7280" />
+              <Ionicons name="person-outline" size={14} color="#8E998F" />
 
               <Text numberOfLines={1} style={styles.relationText}>
                 {task.assignee.full_name || task.assignee.email}
@@ -160,7 +156,7 @@ export function TaskCard({
 
       {priority === "critical" && task.status !== "completed" ? (
         <View style={styles.warningRow}>
-          <Ionicons name="warning-outline" size={14} color="#DC2626" />
+          <Ionicons name="warning-outline" size={14} color="#FF8A8A" />
 
           <Text style={styles.warningText}>
             Tugas ini membutuhkan perhatian segera
@@ -173,11 +169,11 @@ export function TaskCard({
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: 18,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     gap: 14,
   },
   compactCard: {
@@ -186,7 +182,8 @@ const styles = StyleSheet.create({
     gap: 11,
   },
   overdueCard: {
-    borderColor: "#FECACA",
+    borderColor: "rgba(255, 138, 138, 0.3)",
+    backgroundColor: "rgba(255, 80, 80, 0.04)",
   },
   pressed: {
     opacity: 0.75,
@@ -202,20 +199,20 @@ const styles = StyleSheet.create({
     height: 23,
     borderRadius: 7,
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderColor: "rgba(255, 255, 255, 0.2)",
     alignItems: "center",
     justifyContent: "center",
     marginTop: 1,
   },
   checkboxCompleted: {
-    backgroundColor: "#1C5BFF",
-    borderColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
+    borderColor: "#A8D8A8",
   },
   progressIndicator: {
     width: 9,
     height: 9,
     borderRadius: 4.5,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
   titleContainer: {
     flex: 1,
@@ -225,16 +222,16 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   completedTitle: {
-    color: "#9CA3AF",
+    color: "#8E998F",
     textDecorationLine: "line-through",
   },
   description: {
     fontSize: 13,
     lineHeight: 18,
-    color: "#6B7280",
+    color: "#8E998F",
   },
   metaRow: {
     flexDirection: "row",
@@ -259,15 +256,15 @@ const styles = StyleSheet.create({
   infoText: {
     flex: 1,
     fontSize: 12,
-    color: "#6B7280",
+    color: "#8E998F",
   },
   relativeDeadline: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "#8E998F",
   },
   overdueText: {
-    color: "#DC2626",
+    color: "#FF8A8A",
   },
   relationsRow: {
     flexDirection: "row",
@@ -285,7 +282,7 @@ const styles = StyleSheet.create({
   relationText: {
     flexShrink: 1,
     fontSize: 12,
-    color: "#6B7280",
+    color: "#8E998F",
   },
   warningRow: {
     flexDirection: "row",
@@ -293,13 +290,14 @@ const styles = StyleSheet.create({
     gap: 6,
     padding: 9,
     borderRadius: 10,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: "rgba(255, 138, 138, 0.1)",
     marginLeft: 35,
   },
   warningText: {
     flex: 1,
     fontSize: 11,
     fontWeight: "600",
-    color: "#DC2626",
+    color: "#FF8A8A",
   },
 });
+

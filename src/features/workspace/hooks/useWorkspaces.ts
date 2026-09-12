@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
-    createWorkspace,
-    deleteWorkspace,
-    getWorkspaces,
-    updateWorkspace,
+  createWorkspace,
+  deleteWorkspace,
+  getWorkspaces,
+  updateWorkspace,
 } from '../services/workspaceService';
 
 import type {
-    CreateWorkspaceInput,
-    UpdateWorkspaceInput,
-    Workspace,
+  CreateWorkspaceInput,
+  UpdateWorkspaceInput,
+  Workspace,
 } from '../types/workspace.types';
 
 export function useWorkspaces() {
@@ -24,7 +24,6 @@ export function useWorkspaces() {
       setError(null);
 
       const data = await getWorkspaces();
-
       setWorkspaces(data);
     } catch (err) {
       setError(
@@ -38,12 +37,38 @@ export function useWorkspaces() {
   }, []);
 
   useEffect(() => {
-    fetchWorkspaces();
-  }, [fetchWorkspaces]);
+    let isMounted = true;
 
-  const addWorkspace = async (
-    input: CreateWorkspaceInput,
-  ) => {
+    async function load() {
+      try {
+        setError(null);
+        const data = await getWorkspaces();
+        if (isMounted) {
+          setWorkspaces(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err instanceof Error
+              ? err
+              : new Error('Failed to fetch workspaces.'),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const addWorkspace = async (input: CreateWorkspaceInput) => {
     const workspace = await createWorkspace(input);
 
     setWorkspaces((current) => [
@@ -74,9 +99,7 @@ export function useWorkspaces() {
     return workspace;
   };
 
-  const removeWorkspace = async (
-    workspaceId: string,
-  ) => {
+  const removeWorkspace = async (workspaceId: string) => {
     await deleteWorkspace(workspaceId);
 
     setWorkspaces((current) =>

@@ -11,14 +11,23 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useSession } from "@/features/auth/hooks/useSession";
 import { signOut } from "@/features/auth/services/authService";
 
 export default function AppHeader() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { user } = useSession();
 
   const [menuVisible, setMenuVisible] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const fullName =
+    (user?.user_metadata?.full_name ||
+      user?.user_metadata?.name ||
+      user?.email?.split("@")[0] ||
+      "User") as string;
+  const firstName = fullName.split(" ")[0] || "User";
 
   const handleLogout = async () => {
     if (isLoggingOut) {
@@ -70,7 +79,7 @@ export default function AppHeader() {
 
             <View style={styles.textContainer}>
               <Text style={styles.welcome}>
-                Welcome, <Text style={styles.name}>First Name</Text>
+                Welcome, <Text style={styles.name}>{firstName}</Text>
               </Text>
 
               <Text style={styles.subtitle}>Let’s Get Things Done!</Text>
@@ -142,9 +151,13 @@ export default function AppHeader() {
               </View>
 
               <View style={styles.menuHeaderText}>
-                <Text style={styles.menuTitle}>Account</Text>
+                <Text style={styles.menuTitle} numberOfLines={1}>
+                  {fullName}
+                </Text>
 
-                <Text style={styles.menuSubtitle}>Kelola akun kamu</Text>
+                <Text style={styles.menuSubtitle} numberOfLines={1}>
+                  {user?.email || "Kelola akun kamu"}
+                </Text>
               </View>
             </View>
 

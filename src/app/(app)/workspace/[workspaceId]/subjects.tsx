@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -8,13 +8,14 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import GlassCard from "../../../../components/ui/GlassCard";
+
 import { useSubjectMutation, useSubjects } from "../../../../features/schedule";
 
 import type { Subject } from "../../../../features/schedule";
@@ -22,6 +23,7 @@ import type { Subject } from "../../../../features/schedule";
 import SubjectForm from "../../../../features/schedule/components/SubjectForm";
 
 export default function SubjectsScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     workspaceId: string;
   }>();
@@ -35,7 +37,7 @@ export default function SubjectsScreen() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const { data: subjects = [], isLoading, refetch } = useSubjects(workspaceId);
-  const { deleteSubject, isDeleting } = useSubjectMutation();
+  const { deleteSubject } = useSubjectMutation();
 
   const [refreshing, setRefreshing] = useState(false);
 
@@ -155,13 +157,20 @@ export default function SubjectsScreen() {
 
   if (!workspaceId) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <LinearGradient
           colors={["#0D1610", "#182A1C", "#060A08"]}
           style={StyleSheet.absoluteFill}
         />
 
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              paddingTop: insets.top + 10,
+            },
+          ]}
+        >
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
           </Pressable>
@@ -173,19 +182,26 @@ export default function SubjectsScreen() {
           <Ionicons name="alert-circle-outline" size={40} color="#FF8A8A" />
           <Text style={styles.errorText}>Workspace ID tidak ditemukan</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
         locations={[0, 0.3, 0.65, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 10,
+          },
+        ]}
+      >
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
         </Pressable>
@@ -222,7 +238,12 @@ export default function SubjectsScreen() {
           data={subjects}
           keyExtractor={(item) => item.id}
           renderItem={renderSubject}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              paddingBottom: insets.bottom + 40,
+            },
+          ]}
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
@@ -243,9 +264,10 @@ export default function SubjectsScreen() {
           }
         />
       )}
-    </SafeAreaView>
+    </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

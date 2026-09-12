@@ -47,6 +47,7 @@ export interface CreateTaskInput {
 
 export interface UpdateTaskInput {
   id: string;
+  workspace_id?: string;
   subject_id?: string | null;
   assigned_to?: string | null;
   title?: string;

@@ -1,11 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import ScheduleForm from "../../../../../features/schedule/components/ScheduleForm";
 
 export default function ScheduleScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     subjectId: string;
     workspaceId: string;
@@ -26,16 +28,23 @@ export default function ScheduleScreen() {
 
   if (!subjectId || !workspaceId) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <LinearGradient
           colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
           locations={[0, 0.3, 0.65, 1]}
           style={StyleSheet.absoluteFill}
         />
 
-        <View style={styles.header}>
+        <View
+          style={[
+            styles.header,
+            {
+              paddingTop: insets.top + 10,
+            },
+          ]}
+        >
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
+            <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
           </Pressable>
           <Text style={styles.title}>Schedule</Text>
           <View style={styles.spacer} />
@@ -45,33 +54,47 @@ export default function ScheduleScreen() {
           <Ionicons name="alert-circle-outline" size={40} color="#FF8A8A" />
           <Text style={styles.errorText}>Data tidak lengkap</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <LinearGradient
         colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
         locations={[0, 0.3, 0.65, 1]}
         style={StyleSheet.absoluteFill}
       />
 
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 10,
+          },
+        ]}
+      >
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
+          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
         </Pressable>
         <Text style={styles.title}>Schedule</Text>
         <View style={styles.spacer} />
       </View>
 
-      <ScheduleForm
-        subjectId={subjectId}
-        workspaceId={workspaceId}
-        scheduleId={scheduleId}
-        onSuccess={() => router.back()}
-      />
-    </SafeAreaView>
+      <View
+        style={{
+          flex: 1,
+          paddingBottom: insets.bottom + 20,
+        }}
+      >
+        <ScheduleForm
+          subjectId={subjectId}
+          workspaceId={workspaceId}
+          scheduleId={scheduleId}
+          onSuccess={() => router.back()}
+        />
+      </View>
+    </View>
   );
 }
 
@@ -92,8 +115,10 @@ const styles = StyleSheet.create({
   backButton: {
     width: 40,
     height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   title: {
     fontSize: 18,
@@ -115,3 +140,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 });
+

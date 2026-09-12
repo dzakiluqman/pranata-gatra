@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#374151",
+    color: "#DCE3DC",
   },
   deadlineLabel: {
     marginTop: 8,
@@ -145,20 +145,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.09)",
   },
   activeChip: {
-    backgroundColor: "#1C5BFF",
-    borderColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
+    borderColor: "#A8D8A8",
   },
   chipText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#4B5563",
+    color: "#8E998F",
   },
   activeChipText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
+    fontWeight: "700",
   },
 });
+

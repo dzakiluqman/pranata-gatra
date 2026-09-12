@@ -180,9 +180,62 @@ export async function getMyTasks(
   });
 }
 
+async function validateSubjectBelongsToWorkspace(
+  subjectId: string,
+  workspaceId: string,
+) {
+  const { data: subject, error } = await supabase
+    .from("subjects")
+    .select("id, workspace_id")
+    .eq("id", subjectId)
+    .maybeSingle();
+
+  if (error || !subject || subject.workspace_id !== workspaceId) {
+    throw new Error(
+      "Subject yang dipilih tidak valid atau tidak berasal dari workspace ini.",
+    );
+  }
+}
+
+async function validateAssigneeBelongsToWorkspace(
+  userId: string,
+  workspaceId: string,
+) {
+  const { data: workspace } = await supabase
+    .from("workspaces")
+    .select("id, owner_id")
+    .eq("id", workspaceId)
+    .maybeSingle();
+
+  if (workspace?.owner_id === userId) {
+    return;
+  }
+
+  const { data: member, error } = await supabase
+    .from("workspace_members")
+    .select("id")
+    .eq("workspace_id", workspaceId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (error || !member) {
+    throw new Error(
+      "Assignee yang dipilih bukan merupakan member dari workspace ini.",
+    );
+  }
+}
+
 export async function createTask(
   input: CreateTaskInput,
 ): Promise<TaskWithRelations> {
+  if (input.subject_id) {
+    await validateSubjectBelongsToWorkspace(input.subject_id, input.workspace_id);
+  }
+
+  if (input.assigned_to) {
+    await validateAssigneeBelongsToWorkspace(input.assigned_to, input.workspace_id);
+  }
+
   const payload = {
     workspace_id: input.workspace_id,
     subject_id: input.subject_id ?? null,
@@ -211,7 +264,31 @@ export async function createTask(
 export async function updateTask(
   input: UpdateTaskInput,
 ): Promise<TaskWithRelations> {
+  const { data: existingTask, error: fetchError } = await supabase
+    .from("tasks")
+    .select("id, workspace_id, subject_id, assigned_to")
+    .eq("id", input.id)
+    .single();
+
+  if (fetchError || !existingTask) {
+    throw new Error("Task tidak ditemukan.");
+  }
+
+  const targetWorkspaceId = input.workspace_id ?? existingTask.workspace_id;
+
+  if (input.subject_id !== undefined && input.subject_id !== null) {
+    await validateSubjectBelongsToWorkspace(input.subject_id, targetWorkspaceId);
+  }
+
+  if (input.assigned_to !== undefined && input.assigned_to !== null) {
+    await validateAssigneeBelongsToWorkspace(input.assigned_to, targetWorkspaceId);
+  }
+
   const updates: Record<string, unknown> = {};
+
+  if (input.workspace_id !== undefined) {
+    updates.workspace_id = input.workspace_id;
+  }
 
   if (input.title !== undefined) {
     updates.title = input.title.trim();

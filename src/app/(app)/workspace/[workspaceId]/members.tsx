@@ -1,10 +1,12 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { WorkspaceMembers } from "@/features/workspace/components/WorkspaceMembers";
 
 export default function WorkspaceMembersPage() {
+  const insets = useSafeAreaInsets();
   const { workspaceId } = useLocalSearchParams<{
     workspaceId: string;
   }>();
@@ -14,19 +16,19 @@ export default function WorkspaceMembersPage() {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingBottom: insets.bottom }]}>
       <Stack.Screen
         options={{
           headerShown: true,
           title: "Members",
           headerShadowVisible: false,
           headerStyle: {
-            backgroundColor: "#F8FAFC",
+            backgroundColor: "#060A08",
           },
           headerTitleStyle: {
             fontSize: 18,
             fontWeight: "800",
-            color: "#111827",
+            color: "#F5F7F3",
           },
           headerLeft: () => (
             <Pressable
@@ -34,7 +36,7 @@ export default function WorkspaceMembersPage() {
               hitSlop={10}
               style={styles.backButton}
             >
-              <Ionicons name="chevron-back" size={24} color="#111827" />
+              <Ionicons name="chevron-back" size={24} color="#F5F7F3" />
             </Pressable>
           ),
         }}
@@ -43,14 +45,14 @@ export default function WorkspaceMembersPage() {
       <View style={styles.container}>
         <WorkspaceMembers workspaceId={workspaceId} />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#060A08",
   },
 
   container: {
@@ -64,3 +66,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
 });
+

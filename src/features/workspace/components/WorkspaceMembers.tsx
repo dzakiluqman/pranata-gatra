@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useWorkspaceMembers } from "../hooks/useWorkspaceMembers";
 import { MemberCard } from "./MemberCard";
@@ -17,6 +18,7 @@ type WorkspaceMembersProps = {
 };
 
 export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
+  const insets = useSafeAreaInsets();
   const {
     members,
     invitations,
@@ -67,7 +69,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color="#A8D8A8" />
 
         <Text style={styles.loadingText}>Memuat members...</Text>
       </View>
@@ -77,7 +79,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
   if (error) {
     return (
       <View style={styles.center}>
-        <Ionicons name="alert-circle-outline" size={42} color="#EF4444" />
+        <Ionicons name="alert-circle-outline" size={42} color="#FF8A8A" />
 
         <Text style={styles.errorTitle}>Gagal memuat members</Text>
 
@@ -91,7 +93,10 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.container}
+      contentContainerStyle={[
+        styles.container,
+        { paddingBottom: Math.max(insets.bottom, 20) + 40 },
+      ]}
     >
       <View style={styles.header}>
         <View>
@@ -103,7 +108,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
         </View>
 
         <View style={styles.memberCount}>
-          <Ionicons name="people-outline" size={17} color="#208AEF" />
+          <Ionicons name="people-outline" size={17} color="#A8D8A8" />
 
           <Text style={styles.memberCountText}>{members.length}</Text>
         </View>
@@ -117,7 +122,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
 
       {members.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="people-outline" size={30} color="#94A3B8" />
+          <Ionicons name="people-outline" size={30} color="#8E998F" />
 
           <Text style={styles.emptyTitle}>Belum ada member</Text>
         </View>
@@ -136,7 +141,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
       {invitations.filter((invitation) => invitation.status === "pending")
         .length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="mail-outline" size={30} color="#94A3B8" />
+          <Ionicons name="mail-outline" size={30} color="#8E998F" />
 
           <Text style={styles.emptyTitle}>Tidak ada invitation pending</Text>
         </View>
@@ -146,7 +151,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
           .map((invitation) => (
             <View key={invitation.id} style={styles.invitationCard}>
               <View style={styles.invitationIcon}>
-                <Ionicons name="mail-outline" size={21} color="#208AEF" />
+                <Ionicons name="mail-outline" size={21} color="#A8D8A8" />
               </View>
 
               <View style={styles.invitationContent}>
@@ -164,7 +169,7 @@ export function WorkspaceMembers({ workspaceId }: WorkspaceMembersProps) {
 
       {isRemoving && (
         <View style={styles.removing}>
-          <ActivityIndicator size="small" color="#208AEF" />
+          <ActivityIndicator size="small" color="#A8D8A8" />
 
           <Text style={styles.removingText}>Menghapus member...</Text>
         </View>
@@ -177,6 +182,7 @@ const styles = StyleSheet.create({
   container: {
     padding: 20,
     paddingBottom: 40,
+    backgroundColor: "#060A08",
   },
 
   center: {
@@ -184,25 +190,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 30,
+    backgroundColor: "#060A08",
   },
 
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#64748B",
+    color: "#8E998F",
   },
 
   errorTitle: {
     marginTop: 12,
     fontSize: 17,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   errorText: {
     marginTop: 6,
     fontSize: 13,
-    color: "#64748B",
+    color: "#8E998F",
     textAlign: "center",
   },
 
@@ -216,13 +223,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   subtitle: {
     marginTop: 5,
     fontSize: 13,
-    color: "#64748B",
+    color: "#8E998F",
   },
 
   memberCount: {
@@ -233,14 +240,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 9,
     borderRadius: 12,
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   memberCountText: {
     marginLeft: 5,
     fontSize: 13,
     fontWeight: "800",
-    color: "#208AEF",
+    color: "#A8D8A8",
   },
 
   sectionTitle: {
@@ -248,7 +255,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     fontSize: 16,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   empty: {
@@ -257,16 +264,16 @@ const styles = StyleSheet.create({
     paddingVertical: 28,
     marginBottom: 4,
     borderRadius: 16,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   emptyTitle: {
     marginTop: 8,
     fontSize: 13,
     fontWeight: "600",
-    color: "#64748B",
+    color: "#8E998F",
   },
 
   invitationCard: {
@@ -275,9 +282,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   invitationIcon: {
@@ -286,7 +293,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 13,
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   invitationContent: {
@@ -297,13 +304,13 @@ const styles = StyleSheet.create({
   invitationEmail: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   invitationRole: {
     marginTop: 4,
     fontSize: 12,
-    color: "#64748B",
+    color: "#8E998F",
     textTransform: "capitalize",
   },
 
@@ -317,6 +324,7 @@ const styles = StyleSheet.create({
   removingText: {
     marginLeft: 8,
     fontSize: 12,
-    color: "#64748B",
+    color: "#8E998F",
   },
 });
+

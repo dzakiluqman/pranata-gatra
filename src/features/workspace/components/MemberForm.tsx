@@ -50,13 +50,13 @@ export function MemberForm({
       <Text style={styles.label}>Email Member</Text>
 
       <View style={styles.inputContainer}>
-        <Ionicons name="mail-outline" size={20} color="#9CA3AF" />
+        <Ionicons name="mail-outline" size={20} color="#8E998F" />
 
         <TextInput
           value={email}
           onChangeText={setEmail}
           placeholder="contoh@email.com"
-          placeholderTextColor="#9CA3AF"
+          placeholderTextColor="#8E998F"
           style={styles.input}
           keyboardType="email-address"
           autoCapitalize="none"
@@ -77,10 +77,10 @@ export function MemberForm({
         ]}
       >
         {isSubmitting ? (
-          <ActivityIndicator color="#FFFFFF" />
+          <ActivityIndicator color="#0A0E0A" />
         ) : (
           <>
-            <Ionicons name="send-outline" size={18} color="#FFFFFF" />
+            <Ionicons name="send-outline" size={18} color="#0A0E0A" />
 
             <Text style={styles.buttonText}>Kirim Invitation</Text>
           </>
@@ -94,16 +94,16 @@ const styles = StyleSheet.create({
   container: {
     padding: 18,
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   label: {
     marginBottom: 9,
     fontSize: 14,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   inputContainer: {
@@ -112,22 +112,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 14,
     borderRadius: 13,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#151A15",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
 
   input: {
     flex: 1,
     marginLeft: 9,
     fontSize: 14,
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   error: {
     marginTop: 8,
     fontSize: 13,
-    color: "#DC2626",
+    color: "#FF8A8A",
   },
 
   button: {
@@ -137,14 +137,14 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginTop: 14,
     borderRadius: 13,
-    backgroundColor: "#208AEF",
+    backgroundColor: "#A8D8A8",
   },
 
   buttonText: {
     marginLeft: 8,
     fontSize: 14,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: "#0A0E0A",
   },
 
   disabled: {
@@ -155,3 +155,4 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
 });
+

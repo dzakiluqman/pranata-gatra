@@ -1,16 +1,17 @@
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { LinearGradient } from "expo-linear-gradient";
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { getWorkspaces } from "@/features/workspace/services/workspaceService";
 import { supabase } from "@/lib/supabase";
@@ -28,21 +29,19 @@ type WorkspaceWithStats = Workspace & {
 };
 
 export default function WorkspaceScreen() {
+  const insets = useSafeAreaInsets();
   const [workspaces, setWorkspaces] = useState<WorkspaceWithStats[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadWorkspaces = async (isRefresh = false) => {
+  const loadWorkspaces = useCallback(async (isRefresh = false) => {
     try {
-      setError(null);
-
       if (isRefresh) {
         setRefreshing(true);
-      } else {
-        setLoading(true);
       }
+      setError(null);
 
       const data = await getWorkspaces();
 
@@ -129,11 +128,13 @@ export default function WorkspaceScreen() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
-
-  useEffect(() => {
-    loadWorkspaces();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadWorkspaces();
+    }, [loadWorkspaces]),
+  );
 
   const filteredWorkspaces = useMemo(() => {
     const keyword = search.trim().toLowerCase();
@@ -171,7 +172,7 @@ export default function WorkspaceScreen() {
         <View style={styles.cardContent}>
           <View style={styles.cardHeader}>
             <View style={styles.workspaceIcon}>
-              <Ionicons name="grid-outline" size={24} color="#208AEF" />
+              <Ionicons name="grid-outline" size={22} color="#A8D8A8" />
             </View>
 
             <View style={styles.cardHeaderText}>
@@ -184,26 +185,26 @@ export default function WorkspaceScreen() {
               </Text>
             </View>
 
-            <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+            <Ionicons name="chevron-forward" size={18} color="#8E998F" />
           </View>
 
           <View style={styles.divider} />
 
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <Ionicons name="book-outline" size={16} color="#6B7280" />
+              <Ionicons name="book-outline" size={15} color="#8E998F" />
 
               <Text style={styles.statText}>{item.stats.subjects} Subject</Text>
             </View>
 
             <View style={styles.stat}>
-              <Ionicons name="checkbox-outline" size={16} color="#6B7280" />
+              <Ionicons name="checkbox-outline" size={15} color="#8E998F" />
 
               <Text style={styles.statText}>{item.stats.tasks} Task</Text>
             </View>
 
             <View style={styles.stat}>
-              <Ionicons name="people-outline" size={16} color="#6B7280" />
+              <Ionicons name="people-outline" size={15} color="#8E998F" />
 
               <Text style={styles.statText}>{item.stats.members} Member</Text>
             </View>
@@ -215,22 +216,30 @@ export default function WorkspaceScreen() {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#208AEF" />
+          <ActivityIndicator size="large" color="#A8D8A8" />
 
           <Text style={styles.loadingText}>Memuat workspace...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (error) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.errorContainer}>
           <View style={styles.errorIcon}>
-            <Ionicons name="alert-circle-outline" size={34} color="#EF4444" />
+            <Ionicons name="alert-circle-outline" size={34} color="#FF8A8A" />
           </View>
 
           <Text style={styles.errorTitle}>Gagal Memuat Workspace</Text>
@@ -241,17 +250,22 @@ export default function WorkspaceScreen() {
             style={styles.retryButton}
             onPress={() => loadWorkspaces()}
           >
-            <Ionicons name="refresh" size={18} color="#FFFFFF" />
+            <Ionicons name="refresh" size={18} color="#0A0E0A" />
 
             <Text style={styles.retryButtonText}>Coba Lagi</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      <LinearGradient
+        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
+        locations={[0, 0.25, 0.65, 1]}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.container}>
         <View style={styles.header}>
           <View style={styles.headerTextContainer}>
@@ -271,25 +285,25 @@ export default function WorkspaceScreen() {
             ]}
             onPress={createWorkspace}
           >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Ionicons name="add" size={24} color="#0A0E0A" />
           </Pressable>
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#9CA3AF" />
+          <Ionicons name="search-outline" size={19} color="#8E998F" />
 
           <TextInput
             value={search}
             onChangeText={setSearch}
             placeholder="Cari workspace..."
-            placeholderTextColor="#9CA3AF"
+            placeholderTextColor="#8E998F"
             style={styles.searchInput}
             returnKeyType="search"
           />
 
           {search.length > 0 && (
             <Pressable onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color="#8E998F" />
             </Pressable>
           )}
         </View>
@@ -313,6 +327,7 @@ export default function WorkspaceScreen() {
           onRefresh={() => loadWorkspaces(true)}
           contentContainerStyle={[
             styles.listContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 90 },
             filteredWorkspaces.length === 0 && styles.emptyListContent,
           ]}
           ListEmptyComponent={
@@ -321,7 +336,7 @@ export default function WorkspaceScreen() {
                 <Ionicons
                   name={search ? "search-outline" : "grid-outline"}
                   size={32}
-                  color="#208AEF"
+                  color="#A8D8A8"
                 />
               </View>
 
@@ -337,7 +352,7 @@ export default function WorkspaceScreen() {
 
               {!search && (
                 <Pressable style={styles.emptyButton} onPress={createWorkspace}>
-                  <Ionicons name="add" size={18} color="#FFFFFF" />
+                  <Ionicons name="add" size={18} color="#0A0E0A" />
 
                   <Text style={styles.emptyButtonText}>Buat Workspace</Text>
                 </Pressable>
@@ -347,20 +362,24 @@ export default function WorkspaceScreen() {
         />
 
         <Pressable
-          style={({ pressed }) => [styles.fab, pressed && styles.pressed]}
+          style={({ pressed }) => [
+            styles.fab,
+            { bottom: Math.max(insets.bottom, 16) + 16 },
+            pressed && styles.pressed,
+          ]}
           onPress={createWorkspace}
         >
-          <Ionicons name="add" size={28} color="#FFFFFF" />
+          <Ionicons name="add" size={28} color="#0A0E0A" />
         </Pressable>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#060A08",
   },
 
   container: {
@@ -385,19 +404,19 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 1.2,
-    color: "#208AEF",
+    color: "#A8D8A8",
     marginBottom: 4,
   },
 
   title: {
     fontSize: 30,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   subtitle: {
     fontSize: 14,
-    color: "#6B7280",
+    color: "#8E998F",
     marginTop: 4,
   },
 
@@ -407,7 +426,7 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#208AEF",
+    backgroundColor: "#A8D8A8",
   },
 
   searchContainer: {
@@ -415,17 +434,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
     marginBottom: 24,
   },
 
   searchInput: {
     flex: 1,
     fontSize: 15,
-    color: "#111827",
+    color: "#F5F7F3",
     marginLeft: 10,
   },
 
@@ -438,7 +457,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   workspaceCount: {
@@ -449,11 +468,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   workspaceCountText: {
-    color: "#208AEF",
+    color: "#A8D8A8",
     fontSize: 12,
     fontWeight: "700",
   },
@@ -464,17 +483,17 @@ const styles = StyleSheet.create({
 
   workspaceCard: {
     flexDirection: "row",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderRadius: 20,
     marginBottom: 14,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#EEF0F4",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   workspaceAccent: {
-    width: 5,
-    backgroundColor: "#208AEF",
+    width: 4,
+    backgroundColor: "#A8D8A8",
   },
 
   cardContent: {
@@ -488,12 +507,12 @@ const styles = StyleSheet.create({
   },
 
   workspaceIcon: {
-    width: 48,
-    height: 48,
+    width: 46,
+    height: 46,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   cardHeaderText: {
@@ -505,19 +524,19 @@ const styles = StyleSheet.create({
   workspaceName: {
     fontSize: 16,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   workspaceDescription: {
     fontSize: 13,
     lineHeight: 18,
-    color: "#6B7280",
+    color: "#8E998F",
     marginTop: 3,
   },
 
   divider: {
     height: 1,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
     marginVertical: 14,
   },
 
@@ -534,7 +553,7 @@ const styles = StyleSheet.create({
 
   statText: {
     fontSize: 12,
-    color: "#6B7280",
+    color: "#8E998F",
     marginLeft: 5,
   },
 
@@ -547,7 +566,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#208AEF",
+    backgroundColor: "#A8D8A8",
     elevation: 6,
   },
 
@@ -568,21 +587,21 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.1)",
     marginBottom: 16,
   },
 
   emptyTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
     textAlign: "center",
   },
 
   emptyDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#6B7280",
+    color: "#8E998F",
     textAlign: "center",
     marginTop: 6,
   },
@@ -595,11 +614,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "#208AEF",
+    backgroundColor: "#A8D8A8",
   },
 
   emptyButtonText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -613,7 +632,7 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#6B7280",
+    color: "#8E998F",
   },
 
   errorContainer: {
@@ -629,21 +648,21 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "rgba(255, 138, 138, 0.12)",
     marginBottom: 16,
   },
 
   errorTitle: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
     textAlign: "center",
   },
 
   errorDescription: {
     fontSize: 14,
     lineHeight: 20,
-    color: "#6B7280",
+    color: "#8E998F",
     textAlign: "center",
     marginTop: 8,
   },
@@ -656,11 +675,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     height: 44,
     borderRadius: 14,
-    backgroundColor: "#208AEF",
+    backgroundColor: "#A8D8A8",
   },
 
   retryButtonText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -669,3 +688,4 @@ const styles = StyleSheet.create({
     opacity: 0.75,
   },
 });
+

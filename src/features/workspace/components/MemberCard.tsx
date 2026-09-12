@@ -43,7 +43,7 @@ export function MemberCard({ member, onRemove }: MemberCardProps) {
             pressed && styles.pressed,
           ]}
         >
-          <Ionicons name="trash-outline" size={19} color="#EF4444" />
+          <Ionicons name="trash-outline" size={19} color="#FF8A8A" />
         </Pressable>
       )}
     </View>
@@ -57,9 +57,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 10,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
 
   avatar: {
@@ -68,13 +68,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    backgroundColor: "#E8F3FF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   avatarText: {
     fontSize: 18,
     fontWeight: "800",
-    color: "#208AEF",
+    color: "#A8D8A8",
   },
 
   content: {
@@ -85,13 +85,13 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 15,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
 
   email: {
     marginTop: 2,
     fontSize: 12,
-    color: "#6B7280",
+    color: "#8E998F",
   },
 
   roleBadge: {
@@ -100,13 +100,13 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     marginTop: 5,
     borderRadius: 7,
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
   },
 
   roleText: {
     fontSize: 10,
     fontWeight: "700",
-    color: "#64748B",
+    color: "#A8D8A8",
     textTransform: "uppercase",
   },
 
@@ -117,10 +117,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 8,
     borderRadius: 11,
-    backgroundColor: "#FEF2F2",
+    backgroundColor: "rgba(255, 138, 138, 0.12)",
   },
 
   pressed: {
     opacity: 0.6,
   },
 });
+

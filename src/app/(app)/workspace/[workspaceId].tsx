@@ -1,18 +1,21 @@
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Alert,
-  SafeAreaView,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  View,
 } from "react-native";
-
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useWorkspace } from "@/features/workspace";
-
 import { WorkspaceDetail } from "@/features/workspace/components/WorkspaceDetail";
 
 export default function WorkspaceDetailScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const { workspaceId } = useLocalSearchParams<{
@@ -85,13 +88,43 @@ export default function WorkspaceDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
+        locations={[0, 0.25, 0.65, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <View
+        style={[
+          styles.header,
+          {
+            paddingTop: insets.top + 10,
+          },
+        ]}
+      >
+        <Pressable
+          style={({ pressed }) => [
+            styles.backButton,
+            pressed && styles.pressed,
+          ]}
+          onPress={() => router.back()}
+        >
+          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
+        </Pressable>
+        <Text style={styles.headerTitle}>Workspace</Text>
+        <View style={styles.spacer} />
+      </View>
+
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingBottom: insets.bottom + 40,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.title}>Workspace</Text>
-
         <WorkspaceDetail
           workspace={workspace}
           isLoading={isLoading}
@@ -103,25 +136,51 @@ export default function WorkspaceDetailScreen() {
           onMembers={handleMembers}
         />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F9FAFB",
+    backgroundColor: "#060A08",
+  },
+
+  header: {
+    height: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+  },
+
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  },
+
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#F5F7F3",
+  },
+
+  spacer: {
+    width: 40,
   },
 
   content: {
     padding: 20,
-    paddingBottom: 40,
   },
 
-  title: {
-    marginBottom: 20,
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#111827",
+  pressed: {
+    opacity: 0.7,
   },
 });
+

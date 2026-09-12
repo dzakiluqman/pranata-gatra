@@ -8,26 +8,27 @@ interface TaskPriorityBadgeProps {
 
 const PRIORITY_CONFIG = {
   critical: {
-    background: "#FEF2F2",
-    text: "#DC2626",
+    background: "rgba(239, 68, 68, 0.15)",
+    text: "#F87171",
   },
   high: {
-    background: "#FFF7ED",
-    text: "#EA580C",
+    background: "rgba(249, 115, 22, 0.15)",
+    text: "#FB923C",
   },
   medium: {
-    background: "#FEFCE8",
-    text: "#CA8A04",
+    background: "rgba(234, 179, 8, 0.15)",
+    text: "#FACC15",
   },
   low: {
-    background: "#EFF6FF",
-    text: "#2563EB",
+    background: "rgba(168, 216, 168, 0.15)",
+    text: "#A8D8A8",
   },
   none: {
-    background: "#F3F4F6",
-    text: "#6B7280",
+    background: "rgba(255, 255, 255, 0.06)",
+    text: "#8E998F",
   },
 };
+
 
 export function TaskPriorityBadge({
   deadline,

@@ -6,7 +6,7 @@ import { AppProvider } from '@/providers/AppProvider';
 export default function RootLayout() {
   return (
     <AppProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="light" />
       <Slot />
     </AppProvider>
   );

@@ -1,4 +1,5 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
@@ -6,11 +7,12 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   TaskCard,
@@ -21,14 +23,13 @@ import {
 import { useWorkspace } from "@/features/workspace/hooks/useWorkspace";
 
 export default function WorkspaceTasksScreen() {
+  const insets = useSafeAreaInsets();
   const { workspaceId } = useLocalSearchParams<{
     workspaceId: string;
   }>();
 
   const workspaceQuery = useWorkspace(workspaceId);
-
   const tasksQuery = useWorkspaceTasks(workspaceId);
-
   const updateStatusMutation = useUpdateTaskStatus();
 
   const [search, setSearch] = useState("");
@@ -79,13 +80,16 @@ export default function WorkspaceTasksScreen() {
 
   if (workspaceQuery.isLoading || tasksQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#1C5BFF" />
-
+          <ActivityIndicator size="large" color="#A8D8A8" />
           <Text style={styles.loadingText}>Memuat tugas workspace...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -93,10 +97,14 @@ export default function WorkspaceTasksScreen() {
     const error = workspaceQuery.error ?? tasksQuery.error;
 
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.center}>
           <View style={styles.errorIcon}>
-            <Ionicons name="alert-circle-outline" size={32} color="#EF4444" />
+            <Ionicons name="alert-circle-outline" size={32} color="#FF8A8A" />
           </View>
 
           <Text style={styles.errorTitle}>Gagal memuat tugas</Text>
@@ -117,21 +125,46 @@ export default function WorkspaceTasksScreen() {
             <Text style={styles.retryText}>Coba Lagi</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <LinearGradient
+        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
+        locations={[0, 0.25, 0.65, 1]}
+        style={StyleSheet.absoluteFill}
+      />
+
+      <View
+        style={[
+          styles.contentWrapper,
+          {
+            paddingTop: insets.top + 14,
+          },
+        ]}
+      >
         <View style={styles.header}>
           <View style={styles.headerTop}>
-            <Pressable style={styles.backButton} onPress={() => router.back()}>
-              <Ionicons name="arrow-back" size={22} color="#111827" />
+            <Pressable
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => router.back()}
+            >
+              <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
             </Pressable>
 
-            <Pressable style={styles.addButton} onPress={handleCreate}>
-              <Ionicons name="add" size={24} color="#FFFFFF" />
+            <Pressable
+              style={({ pressed }) => [
+                styles.addButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={handleCreate}
+            >
+              <Ionicons name="add" size={24} color="#0A0E0A" />
             </Pressable>
           </View>
 
@@ -143,17 +176,20 @@ export default function WorkspaceTasksScreen() {
         </View>
 
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={20} color="#8A8F98" />
+          <Ionicons name="search-outline" size={19} color="#8E998F" />
 
-          <Pressable style={styles.searchInputWrapper} onPress={() => {}}>
-            <Text style={search ? styles.searchText : styles.searchPlaceholder}>
-              {search || "Cari tugas..."}
-            </Text>
-          </Pressable>
+          <TextInput
+            value={search}
+            onChangeText={setSearch}
+            placeholder="Cari tugas..."
+            placeholderTextColor="#8E998F"
+            style={styles.searchInput}
+            returnKeyType="search"
+          />
 
           {!!search && (
             <Pressable onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={20} color="#9CA3AF" />
+              <Ionicons name="close-circle" size={18} color="#8E998F" />
             </Pressable>
           )}
         </View>
@@ -192,14 +228,19 @@ export default function WorkspaceTasksScreen() {
           data={filteredTasks}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={
-            filteredTasks.length === 0 ? styles.emptyList : styles.listContent
-          }
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
+          contentContainerStyle={[
+            styles.listContent,
+            {
+              paddingBottom: insets.bottom + 40,
+            },
+            filteredTasks.length === 0 && styles.emptyList,
+          ]}
           refreshControl={
             <RefreshControl
               refreshing={tasksQuery.isRefetching}
               onRefresh={() => tasksQuery.refetch()}
-              tintColor="#1C5BFF"
+              tintColor="#A8D8A8"
             />
           }
           renderItem={({ item }) => (
@@ -217,7 +258,11 @@ export default function WorkspaceTasksScreen() {
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIcon}>
-                <Ionicons name="clipboard-outline" size={40} color="#1C5BFF" />
+                <Ionicons
+                  name="clipboard-outline"
+                  size={38}
+                  color="#A8D8A8"
+                />
               </View>
 
               <Text style={styles.emptyTitle}>Belum ada tugas</Text>
@@ -227,7 +272,7 @@ export default function WorkspaceTasksScreen() {
               </Text>
 
               <Pressable style={styles.emptyButton} onPress={handleCreate}>
-                <Ionicons name="add" size={18} color="#FFFFFF" />
+                <Ionicons name="add" size={18} color="#0A0E0A" />
 
                 <Text style={styles.emptyButtonText}>Buat Tugas</Text>
               </Pressable>
@@ -235,99 +280,83 @@ export default function WorkspaceTasksScreen() {
           }
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F6F8FC",
-  },
   container: {
+    flex: 1,
+    backgroundColor: "#060A08",
+  },
+  contentWrapper: {
     flex: 1,
     paddingHorizontal: 20,
   },
   header: {
-    paddingTop: 12,
-    paddingBottom: 18,
+    paddingBottom: 16,
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 18,
+    marginBottom: 16,
   },
   backButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 13,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   addButton: {
     width: 44,
     height: 44,
-    borderRadius: 13,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#1C5BFF",
-    shadowColor: "#1C5BFF",
-    shadowOpacity: 0.2,
-    shadowRadius: 9,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    elevation: 4,
+    backgroundColor: "#A8D8A8",
   },
   title: {
     fontSize: 27,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   subtitle: {
     marginTop: 4,
-    fontSize: 14,
-    color: "#6B7280",
+    fontSize: 13,
+    color: "#8E998F",
   },
   searchContainer: {
     height: 50,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
-    borderRadius: 15,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    marginBottom: 14,
   },
-  searchInputWrapper: {
+  searchInput: {
     flex: 1,
-    justifyContent: "center",
     marginHorizontal: 10,
-  },
-  searchText: {
     fontSize: 15,
-    color: "#111827",
-  },
-  searchPlaceholder: {
-    fontSize: 15,
-    color: "#9CA3AF",
+    color: "#F5F7F3",
   },
   summary: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    marginTop: 15,
-    marginBottom: 12,
+    marginBottom: 14,
     paddingVertical: 14,
-    borderRadius: 17,
-    backgroundColor: "#FFFFFF",
+    borderRadius: 18,
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.08)",
   },
   summaryItem: {
     alignItems: "center",
@@ -336,64 +365,66 @@ const styles = StyleSheet.create({
   summaryNumber: {
     fontSize: 19,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   summaryLabel: {
     marginTop: 2,
     fontSize: 11,
-    color: "#6B7280",
+    color: "#8E998F",
   },
   summaryDivider: {
     width: 1,
-    height: 30,
-    backgroundColor: "#E5E7EB",
+    height: 28,
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  separator: {
+    height: 10,
   },
   listContent: {
-    paddingTop: 5,
-    paddingBottom: 30,
+    paddingTop: 4,
   },
   emptyList: {
     flexGrow: 1,
     justifyContent: "center",
-    paddingBottom: 80,
   },
   emptyContainer: {
     alignItems: "center",
     paddingHorizontal: 30,
+    paddingVertical: 40,
   },
   emptyIcon: {
-    width: 86,
-    height: 86,
-    borderRadius: 43,
+    width: 76,
+    height: 76,
+    borderRadius: 38,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8EEFF",
-    marginBottom: 18,
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    marginBottom: 16,
   },
   emptyTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   emptyMessage: {
     marginTop: 8,
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 13,
+    lineHeight: 20,
     textAlign: "center",
-    color: "#6B7280",
+    color: "#8E998F",
   },
   emptyButton: {
-    marginTop: 22,
+    marginTop: 20,
     flexDirection: "row",
     alignItems: "center",
     gap: 7,
     paddingHorizontal: 18,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
   emptyButtonText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
     fontSize: 14,
     fontWeight: "700",
   },
@@ -406,39 +437,43 @@ const styles = StyleSheet.create({
   loadingText: {
     marginTop: 12,
     fontSize: 14,
-    color: "#6B7280",
+    color: "#8E998F",
   },
   errorIcon: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "rgba(255, 138, 138, 0.12)",
     marginBottom: 16,
   },
   errorTitle: {
-    fontSize: 19,
+    fontSize: 18,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   errorMessage: {
-    marginTop: 8,
+    marginTop: 7,
     fontSize: 14,
     lineHeight: 21,
     textAlign: "center",
-    color: "#6B7280",
+    color: "#8E998F",
   },
   retryButton: {
     marginTop: 20,
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
   retryText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
     fontSize: 14,
     fontWeight: "700",
   },
+  pressed: {
+    opacity: 0.75,
+  },
 });
+

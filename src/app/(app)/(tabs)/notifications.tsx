@@ -1,16 +1,18 @@
-﻿import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import { useFocusEffect } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   FlatList,
   Pressable,
   RefreshControl,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { Schedule } from "@/features/schedule";
 import { formatRecurrence, useTodaySchedules } from "@/features/schedule";
@@ -49,6 +51,7 @@ function formatScheduleRange(start: string, end: string) {
 }
 
 export default function NotificationsScreen() {
+  const insets = useSafeAreaInsets();
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -114,7 +117,29 @@ export default function NotificationsScreen() {
         throw invitationError;
       }
 
-      const normalizedInvitations = (invitationData ?? []).map((item: any) => ({
+      type RawInvitation = {
+        id: string;
+        workspace_id: string;
+        inviter_id: string;
+        invitee_email: string;
+        role: string;
+        token: string;
+        status: string;
+        expires_at: string;
+        accepted_at: string | null;
+        created_at: string;
+        workspace:
+          | { id: string; name: string; description: string | null }
+          | { id: string; name: string; description: string | null }[]
+          | null;
+        inviter:
+          | { id: string; full_name: string | null; email: string; avatar_url: string | null }
+          | { id: string; full_name: string | null; email: string; avatar_url: string | null }[]
+          | null;
+      };
+
+      const rawData = (invitationData ?? []) as unknown as RawInvitation[];
+      const normalizedInvitations: WorkspaceInvitation[] = rawData.map((item) => ({
         ...item,
         workspace: Array.isArray(item.workspace)
           ? (item.workspace[0] ?? null)
@@ -169,9 +194,11 @@ export default function NotificationsScreen() {
     }
   }, []);
 
-  useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+  useFocusEffect(
+    useCallback(() => {
+      loadNotifications();
+    }, [loadNotifications]),
+  );
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -417,20 +444,31 @@ export default function NotificationsScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#A8D8A8" />
 
           <Text style={styles.loadingText}>Memuat notifikasi...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const totalNotifications = invitations.length + todaySchedules.length;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      <LinearGradient
+        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
+        locations={[0, 0.3, 0.55, 0.8, 1]}
+        start={{ x: -0.5, y: 0 }}
+        end={{ x: 1.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
@@ -460,7 +498,10 @@ export default function NotificationsScreen() {
               tintColor="#A8D8A8"
             />
           }
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: Math.max(insets.bottom, 16) + 120 },
+          ]}
           ListHeaderComponent={
             todaySchedules.length > 0 ? (
               <View style={styles.scheduleSection}>
@@ -506,7 +547,7 @@ export default function NotificationsScreen() {
           }
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

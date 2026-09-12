@@ -49,30 +49,33 @@ export default function ScheduleForm({
   const isSubmitting = isCreating || isUpdating;
 
   useEffect(() => {
+    let isMounted = true;
     if (scheduleId) {
-      loadSchedule();
+      scheduleService
+        .getById(scheduleId)
+        .then((schedule) => {
+          if (!isMounted) return;
+          setStartDate(schedule.startDate);
+          setStartTime(schedule.startTime);
+          setEndTime(schedule.endTime);
+          setRecurrenceEnabled(schedule.recurrenceEnabled);
+          setRecurrenceInterval(schedule.recurrenceInterval);
+          setRecurrenceUnit(schedule.recurrenceUnit);
+          setRecurrenceEndDate(schedule.recurrenceEndDate || "");
+          setLoading(false);
+        })
+        .catch((error) => {
+          if (!isMounted) return;
+          console.error("Failed to load schedule:", error);
+          Alert.alert("Gagal", "Tidak dapat memuat data schedule.");
+          setLoading(false);
+        });
     }
-  }, [scheduleId]);
 
-  const loadSchedule = async () => {
-    if (!scheduleId) return;
-    try {
-      setLoading(true);
-      const schedule = await scheduleService.getById(scheduleId);
-      setStartDate(schedule.startDate);
-      setStartTime(schedule.startTime);
-      setEndTime(schedule.endTime);
-      setRecurrenceEnabled(schedule.recurrenceEnabled);
-      setRecurrenceInterval(schedule.recurrenceInterval);
-      setRecurrenceUnit(schedule.recurrenceUnit);
-      setRecurrenceEndDate(schedule.recurrenceEndDate || "");
-    } catch (error) {
-      console.error("Failed to load schedule:", error);
-      Alert.alert("Gagal", "Tidak dapat memuat data schedule.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => {
+      isMounted = false;
+    };
+  }, [scheduleId]);
 
   const handleSubmit = async () => {
     if (!startDate) {

@@ -127,19 +127,54 @@ function mapInvitation(row: InvitationRow): WorkspaceInvitation {
 
 export const workspaceMemberService = {
   async getMembers(workspaceId: string): Promise<WorkspaceMember[]> {
-    const { data, error } = await supabase
-      .from("workspace_members")
-      .select(MEMBER_SELECT)
-      .eq("workspace_id", workspaceId)
-      .order("created_at", {
-        ascending: true,
-      });
+    const [workspaceResult, membersResult] = await Promise.all([
+      supabase
+        .from("workspaces")
+        .select("id, owner_id")
+        .eq("id", workspaceId)
+        .maybeSingle(),
+      supabase
+        .from("workspace_members")
+        .select(MEMBER_SELECT)
+        .eq("workspace_id", workspaceId)
+        .order("created_at", {
+          ascending: true,
+        }),
+    ]);
 
-    if (error) {
-      throw new Error(error.message);
+    if (membersResult.error) {
+      throw new Error(membersResult.error.message);
     }
 
-    return ((data ?? []) as MemberRow[]).map(mapMember);
+    const members = ((membersResult.data ?? []) as MemberRow[]).map(mapMember);
+
+    const ownerId = workspaceResult.data?.owner_id;
+    if (ownerId && !members.some((m) => m.user_id === ownerId)) {
+      const { data: ownerProfile } = await supabase
+        .from("profiles")
+        .select("id, email, full_name, avatar_url")
+        .eq("id", ownerId)
+        .maybeSingle();
+
+      if (ownerProfile) {
+        members.unshift({
+          id: `owner-${ownerId}`,
+          workspace_id: workspaceId,
+          user_id: ownerId,
+          role: "owner" as WorkspaceMemberRole,
+          joined_at: new Date().toISOString(),
+          created_at: new Date().toISOString(),
+          profile: {
+            id: ownerProfile.id,
+            email: ownerProfile.email,
+            full_name: ownerProfile.full_name,
+            avatar_url: ownerProfile.avatar_url,
+          },
+        });
+      }
+    }
+
+    return members;
   },
 
   async addMember({
@@ -248,6 +283,16 @@ export const workspaceMemberService = {
   },
 
   async isMember(workspaceId: string, userId: string): Promise<boolean> {
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("owner_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+
+    if (ws?.owner_id === userId) {
+      return true;
+    }
+
     const { data, error } = await supabase
       .from("workspace_members")
       .select("id")
@@ -271,6 +316,16 @@ export const workspaceMemberService = {
 
     if (!user) {
       return null;
+    }
+
+    const { data: ws } = await supabase
+      .from("workspaces")
+      .select("owner_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+
+    if (ws?.owner_id === user.id) {
+      return "owner";
     }
 
     const { data, error } = await supabase

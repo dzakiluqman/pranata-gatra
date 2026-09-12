@@ -1,4 +1,4 @@
-﻿import AppHeader from "@/components/navigation/AppHeader";
+import AppHeader from "@/components/navigation/AppHeader";
 import GlassTabBar from "@/components/navigation/GlassTabBar";
 import { Tabs } from "expo-router";
 

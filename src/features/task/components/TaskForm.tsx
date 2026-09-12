@@ -1,16 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
-    ActivityIndicator,
-    KeyboardAvoidingView,
-    Platform,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    View,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
 } from "react-native";
 
 import { createTaskSchema } from "../schemas/taskSchemas";
@@ -24,12 +24,14 @@ export interface TaskFormWorkspace {
 export interface TaskFormSubject {
   id: string;
   name: string;
+  workspace_id?: string;
 }
 
 export interface TaskFormMember {
   id: string;
   email: string;
   full_name: string | null;
+  workspace_id?: string;
 }
 
 interface TaskFormProps {
@@ -41,6 +43,7 @@ interface TaskFormProps {
   defaultSubjectId?: string | null;
   defaultAssignedTo?: string | null;
   isSubmitting?: boolean;
+  onWorkspaceChange?: (workspaceId: string) => void;
   onSubmit: (values: {
     title: string;
     description: string;
@@ -76,95 +79,126 @@ export function TaskForm({
   defaultSubjectId = null,
   defaultAssignedTo = null,
   isSubmitting = false,
+  onWorkspaceChange,
   onSubmit,
   onCancel,
 }: TaskFormProps) {
   const isEditing = Boolean(task);
 
   const [title, setTitle] = useState(task?.title ?? "");
-
   const [description, setDescription] = useState(task?.description ?? "");
-
   const [workspaceId, setWorkspaceId] = useState(
     task?.workspace_id ?? defaultWorkspaceId ?? workspaces[0]?.id ?? "",
   );
-
   const [subjectId, setSubjectId] = useState<string | null>(
     task?.subject_id ?? defaultSubjectId ?? null,
   );
-
   const [assignedTo, setAssignedTo] = useState<string | null>(
     task?.assigned_to ?? defaultAssignedTo ?? null,
   );
-
   const [deadline, setDeadline] = useState<Date | null>(
     task?.deadline ? new Date(task.deadline) : null,
   );
-
   const [status, setStatus] = useState<TaskStatus>(task?.status ?? "pending");
-
   const [showDatePicker, setShowDatePicker] = useState(false);
-
   const [showTimePicker, setShowTimePicker] = useState(false);
-
   const [errors, setErrors] = useState<{
     title?: string;
     workspace_id?: string;
+    subject_id?: string;
+    assigned_to?: string;
     deadline?: string;
   }>({});
 
-  useEffect(() => {
-    if (!task && defaultWorkspaceId) {
-      setWorkspaceId(defaultWorkspaceId);
-    }
-  }, [defaultWorkspaceId, task]);
+  const filteredSubjects = useMemo(() => {
+    return subjects.filter(
+      (subject) => !subject.workspace_id || subject.workspace_id === workspaceId,
+    );
+  }, [subjects, workspaceId]);
 
-  const filteredSubjects = useMemo(() => subjects, [subjects]);
+  const filteredMembers = useMemo(() => {
+    return members.filter(
+      (member) => !member.workspace_id || member.workspace_id === workspaceId,
+    );
+  }, [members, workspaceId]);
+
+  const effectiveSubjectId = filteredSubjects.some((s) => s.id === subjectId)
+    ? subjectId
+    : null;
+
+  const effectiveAssignedTo = filteredMembers.some((m) => m.id === assignedTo)
+    ? assignedTo
+    : null;
 
   const selectedWorkspace = workspaces.find(
     (workspace) => workspace.id === workspaceId,
   );
 
-  const selectedSubject = subjects.find((subject) => subject.id === subjectId);
+  const selectedSubject = filteredSubjects.find(
+    (subject) => subject.id === effectiveSubjectId,
+  );
 
-  const selectedMember = members.find((member) => member.id === assignedTo);
+  const selectedMember = filteredMembers.find(
+    (member) => member.id === effectiveAssignedTo,
+  );
 
   const validate = () => {
+    const nextErrors: {
+      title?: string;
+      workspace_id?: string;
+      subject_id?: string;
+      assigned_to?: string;
+      deadline?: string;
+    } = {};
+
+    if (!title.trim()) {
+      nextErrors.title = "Judul tugas wajib diisi.";
+    }
+
+    if (!workspaceId) {
+      nextErrors.workspace_id = "Workspace wajib dipilih.";
+    }
+
+    if (subjectId && !filteredSubjects.some((s) => s.id === subjectId)) {
+      nextErrors.subject_id =
+        "Subject tidak valid untuk workspace yang dipilih.";
+    }
+
+    if (assignedTo && !filteredMembers.some((m) => m.id === assignedTo)) {
+      nextErrors.assigned_to =
+        "Member tidak valid untuk workspace yang dipilih.";
+    }
+
     const result = createTaskSchema.safeParse({
       title,
       description,
       workspace_id: workspaceId,
-      subject_id: subjectId,
-      assigned_to: assignedTo,
+      subject_id: effectiveSubjectId,
+      assigned_to: effectiveAssignedTo,
       deadline: deadline ? deadline.toISOString() : null,
     });
 
-    if (result.success) {
-      setErrors({});
-      return true;
-    }
+    if (!result.success) {
+      for (const issue of result.error.issues) {
+        const field = issue.path[0];
 
-    const nextErrors: {
-      title?: string;
-      workspace_id?: string;
-      deadline?: string;
-    } = {};
-
-    for (const issue of result.error.issues) {
-      const field = issue.path[0];
-
-      if (
-        field === "title" ||
-        field === "workspace_id" ||
-        field === "deadline"
-      ) {
-        nextErrors[field] = issue.message;
+        if (
+          field === "title" ||
+          field === "workspace_id" ||
+          field === "deadline"
+        ) {
+          nextErrors[field] = issue.message;
+        }
       }
     }
 
-    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      return false;
+    }
 
-    return false;
+    setErrors({});
+    return true;
   };
 
   const handleSubmit = () => {
@@ -176,17 +210,17 @@ export function TaskForm({
       title: title.trim(),
       description: description.trim(),
       workspace_id: workspaceId,
-      subject_id: subjectId,
-      assigned_to: assignedTo,
+      subject_id: effectiveSubjectId,
+      assigned_to: effectiveAssignedTo,
       deadline: deadline ? deadline.toISOString() : null,
       status: isEditing ? status : undefined,
     });
   };
 
-  const handleDateChange = (event: any, selectedDate?: Date) => {
+  const handleDateChange = (event: unknown, selectedDate?: Date) => {
     setShowDatePicker(false);
 
-    if (event?.type === "dismissed" || !selectedDate) {
+    if (!selectedDate) {
       return;
     }
 
@@ -201,17 +235,15 @@ export function TaskForm({
     setDeadline(nextDate);
   };
 
-  const handleTimeChange = (event: any, selectedTime?: Date) => {
+  const handleTimeChange = (event: unknown, selectedTime?: Date) => {
     setShowTimePicker(false);
 
-    if (event?.type === "dismissed" || !selectedTime) {
+    if (!selectedTime) {
       return;
     }
 
     const baseDate = deadline ? new Date(deadline) : new Date();
-
     baseDate.setHours(selectedTime.getHours(), selectedTime.getMinutes(), 0, 0);
-
     setDeadline(baseDate);
   };
 
@@ -224,19 +256,27 @@ export function TaskForm({
   };
 
   const handleWorkspaceChange = (id: string) => {
+    if (id === workspaceId) return;
     setWorkspaceId(id);
-
-    if (subjectId && !subjects.some((subject) => subject.id === subjectId)) {
-      setSubjectId(null);
-    }
+    setSubjectId(null);
+    setAssignedTo(null);
+    onWorkspaceChange?.(id);
+    setErrors((prev) => ({
+      ...prev,
+      workspace_id: undefined,
+      subject_id: undefined,
+      assigned_to: undefined,
+    }));
   };
 
   const handleSubjectChange = (id: string | null) => {
     setSubjectId(id);
+    setErrors((prev) => ({ ...prev, subject_id: undefined }));
   };
 
   const handleMemberChange = (id: string | null) => {
     setAssignedTo(id);
+    setErrors((prev) => ({ ...prev, assigned_to: undefined }));
   };
 
   return (
@@ -268,7 +308,7 @@ export function TaskForm({
                 }
               }}
               placeholder="Contoh: Kerjakan laporan Basis Data"
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#6D786E"
               maxLength={200}
               style={[styles.input, errors.title && styles.inputError]}
               editable={!isSubmitting}
@@ -282,7 +322,6 @@ export function TaskForm({
           <View style={styles.field}>
             <View style={styles.labelRow}>
               <Text style={styles.label}>Deskripsi</Text>
-
               <Text style={styles.counter}>{description.length}/5000</Text>
             </View>
 
@@ -290,7 +329,7 @@ export function TaskForm({
               value={description}
               onChangeText={setDescription}
               placeholder="Tambahkan detail tugas..."
-              placeholderTextColor="#9CA3AF"
+              placeholderTextColor="#6D786E"
               multiline
               textAlignVertical="top"
               maxLength={5000}
@@ -334,14 +373,17 @@ export function TaskForm({
             })}
           </View>
 
-          {!selectedWorkspace && workspaces.length === 0 ? (
-            <Text style={styles.helperText}>
-              Belum ada workspace yang tersedia.
-            </Text>
-          ) : null}
-
           {errors.workspace_id ? (
             <Text style={styles.errorText}>{errors.workspace_id}</Text>
+          ) : null}
+
+          {selectedWorkspace ? (
+            <View style={styles.selectedInfo}>
+              <Ionicons name="grid-outline" size={15} color="#A8D8A8" />
+              <Text style={styles.selectedInfoText}>
+                Workspace: {selectedWorkspace.name}
+              </Text>
+            </View>
           ) : null}
         </View>
 
@@ -354,22 +396,24 @@ export function TaskForm({
               disabled={isSubmitting}
               style={[
                 styles.option,
-                subjectId === null && styles.selectedOption,
+                effectiveSubjectId === null && styles.selectedOption,
               ]}
             >
               <View
                 style={[
                   styles.radio,
-                  subjectId === null && styles.selectedRadio,
+                  effectiveSubjectId === null && styles.selectedRadio,
                 ]}
               >
-                {subjectId === null ? <View style={styles.radioDot} /> : null}
+                {effectiveSubjectId === null ? (
+                  <View style={styles.radioDot} />
+                ) : null}
               </View>
 
               <Text
                 style={[
                   styles.optionText,
-                  subjectId === null && styles.selectedOptionText,
+                  effectiveSubjectId === null && styles.selectedOptionText,
                 ]}
               >
                 Tanpa Subject
@@ -377,7 +421,7 @@ export function TaskForm({
             </Pressable>
 
             {filteredSubjects.map((subject) => {
-              const selected = subject.id === subjectId;
+              const selected = subject.id === effectiveSubjectId;
 
               return (
                 <Pressable
@@ -408,10 +452,13 @@ export function TaskForm({
             })}
           </View>
 
+          {errors.subject_id ? (
+            <Text style={styles.errorText}>{errors.subject_id}</Text>
+          ) : null}
+
           {selectedSubject ? (
             <View style={styles.selectedInfo}>
-              <Ionicons name="book-outline" size={15} color="#1C5BFF" />
-
+              <Ionicons name="book-outline" size={15} color="#A8D8A8" />
               <Text style={styles.selectedInfoText}>
                 {selectedSubject.name}
               </Text>
@@ -428,30 +475,32 @@ export function TaskForm({
               disabled={isSubmitting}
               style={[
                 styles.option,
-                assignedTo === null && styles.selectedOption,
+                effectiveAssignedTo === null && styles.selectedOption,
               ]}
             >
               <View
                 style={[
                   styles.radio,
-                  assignedTo === null && styles.selectedRadio,
+                  effectiveAssignedTo === null && styles.selectedRadio,
                 ]}
               >
-                {assignedTo === null ? <View style={styles.radioDot} /> : null}
+                {effectiveAssignedTo === null ? (
+                  <View style={styles.radioDot} />
+                ) : null}
               </View>
 
               <Text
                 style={[
                   styles.optionText,
-                  assignedTo === null && styles.selectedOptionText,
+                  effectiveAssignedTo === null && styles.selectedOptionText,
                 ]}
               >
                 Belum ditugaskan
               </Text>
             </Pressable>
 
-            {members.map((member) => {
-              const selected = member.id === assignedTo;
+            {filteredMembers.map((member) => {
+              const selected = member.id === effectiveAssignedTo;
 
               return (
                 <Pressable
@@ -496,10 +545,13 @@ export function TaskForm({
             })}
           </View>
 
+          {errors.assigned_to ? (
+            <Text style={styles.errorText}>{errors.assigned_to}</Text>
+          ) : null}
+
           {selectedMember ? (
             <View style={styles.selectedInfo}>
-              <Ionicons name="person-outline" size={15} color="#1C5BFF" />
-
+              <Ionicons name="person-outline" size={15} color="#A8D8A8" />
               <Text style={styles.selectedInfoText}>
                 Ditugaskan ke {selectedMember.full_name || selectedMember.email}
               </Text>
@@ -511,7 +563,6 @@ export function TaskForm({
           <View style={styles.sectionHeaderRow}>
             <View>
               <Text style={styles.sectionTitle}>Deadline</Text>
-
               <Text style={styles.sectionSubtitle}>Opsional</Text>
             </View>
 
@@ -528,11 +579,10 @@ export function TaskForm({
               disabled={isSubmitting}
               style={styles.dateButton}
             >
-              <Ionicons name="calendar-outline" size={20} color="#1C5BFF" />
+              <Ionicons name="calendar-outline" size={20} color="#A8D8A8" />
 
               <View style={styles.dateButtonContent}>
                 <Text style={styles.dateButtonLabel}>Tanggal</Text>
-
                 <Text style={styles.dateButtonValue}>
                   {deadline
                     ? new Intl.DateTimeFormat("id-ID", {
@@ -550,11 +600,10 @@ export function TaskForm({
               disabled={isSubmitting}
               style={styles.dateButton}
             >
-              <Ionicons name="time-outline" size={20} color="#1C5BFF" />
+              <Ionicons name="time-outline" size={20} color="#A8D8A8" />
 
               <View style={styles.dateButtonContent}>
                 <Text style={styles.dateButtonLabel}>Waktu</Text>
-
                 <Text style={styles.dateButtonValue}>
                   {deadline
                     ? new Intl.DateTimeFormat("id-ID", {
@@ -569,8 +618,7 @@ export function TaskForm({
 
           {deadline && isValidDate(deadline) ? (
             <View style={styles.deadlinePreview}>
-              <Ionicons name="alarm-outline" size={17} color="#6B7280" />
-
+              <Ionicons name="alarm-outline" size={17} color="#A8D8A8" />
               <Text style={styles.deadlinePreviewText}>
                 {formatDateTime(deadline)}
               </Text>
@@ -603,42 +651,62 @@ export function TaskForm({
 
         {isEditing ? (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Status</Text>
+            <Text style={styles.sectionTitle}>Status Tugas</Text>
 
             <View style={styles.statusContainer}>
-              {(["pending", "in_progress", "completed"] as TaskStatus[]).map(
-                (item) => {
-                  const selected = status === item;
+              <Pressable
+                onPress={() => setStatus("pending")}
+                disabled={isSubmitting}
+                style={[
+                  styles.statusButton,
+                  status === "pending" && styles.selectedStatusButton,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    status === "pending" && styles.selectedStatusButtonText,
+                  ]}
+                >
+                  Pending
+                </Text>
+              </Pressable>
 
-                  const label =
-                    item === "pending"
-                      ? "Pending"
-                      : item === "in_progress"
-                        ? "Dikerjakan"
-                        : "Selesai";
+              <Pressable
+                onPress={() => setStatus("in_progress")}
+                disabled={isSubmitting}
+                style={[
+                  styles.statusButton,
+                  status === "in_progress" && styles.selectedStatusButton,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    status === "in_progress" && styles.selectedStatusButtonText,
+                  ]}
+                >
+                  In Progress
+                </Text>
+              </Pressable>
 
-                  return (
-                    <Pressable
-                      key={item}
-                      onPress={() => setStatus(item)}
-                      disabled={isSubmitting}
-                      style={[
-                        styles.statusButton,
-                        selected && styles.selectedStatusButton,
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          styles.statusButtonText,
-                          selected && styles.selectedStatusButtonText,
-                        ]}
-                      >
-                        {label}
-                      </Text>
-                    </Pressable>
-                  );
-                },
-              )}
+              <Pressable
+                onPress={() => setStatus("completed")}
+                disabled={isSubmitting}
+                style={[
+                  styles.statusButton,
+                  status === "completed" && styles.selectedStatusButton,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.statusButtonText,
+                    status === "completed" && styles.selectedStatusButtonText,
+                  ]}
+                >
+                  Selesai
+                </Text>
+              </Pressable>
             </View>
           </View>
         ) : null}
@@ -660,13 +728,13 @@ export function TaskForm({
             style={[styles.submitButton, isSubmitting && styles.disabledButton]}
           >
             {isSubmitting ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
+              <ActivityIndicator size="small" color="#0A0E0A" />
             ) : (
               <>
                 <Ionicons
                   name={isEditing ? "save-outline" : "add-outline"}
                   size={19}
-                  color="#FFFFFF"
+                  color="#0A0E0A"
                 />
 
                 <Text style={styles.submitButtonText}>
@@ -686,9 +754,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    padding: 20,
     paddingBottom: 40,
-    gap: 20,
+    gap: 22,
   },
   section: {
     gap: 12,
@@ -699,13 +766,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   sectionSubtitle: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    fontSize: 11,
+    color: "#8E998F",
     marginTop: 2,
   },
   field: {
@@ -719,73 +786,69 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#374151",
+    color: "#DCE3DC",
   },
   counter: {
     fontSize: 11,
-    color: "#9CA3AF",
+    color: "#8E998F",
   },
   input: {
-    minHeight: 48,
-    borderRadius: 13,
+    minHeight: 50,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-    paddingHorizontal: 14,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    paddingHorizontal: 15,
     paddingVertical: 12,
     fontSize: 14,
-    color: "#111827",
+    color: "#F5F7F3",
   },
   inputError: {
-    borderColor: "#EF4444",
+    borderColor: "#FF8A8A",
   },
   textArea: {
-    minHeight: 120,
+    minHeight: 110,
   },
   errorText: {
     fontSize: 12,
-    color: "#DC2626",
-  },
-  helperText: {
-    fontSize: 12,
-    color: "#9CA3AF",
+    color: "#FF8A8A",
   },
   optionsContainer: {
-    gap: 8,
+    gap: 9,
   },
   option: {
     minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 13,
-    paddingVertical: 10,
-    borderRadius: 13,
+    gap: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255, 255, 255, 0.07)",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   selectedOption: {
-    borderColor: "#1C5BFF",
-    backgroundColor: "#F5F8FF",
+    borderColor: "#A8D8A8",
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
   },
   radio: {
     width: 19,
     height: 19,
     borderRadius: 10,
     borderWidth: 1.5,
-    borderColor: "#CBD5E1",
+    borderColor: "rgba(255, 255, 255, 0.25)",
     alignItems: "center",
     justifyContent: "center",
   },
   selectedRadio: {
-    borderColor: "#1C5BFF",
+    borderColor: "#A8D8A8",
   },
   radioDot: {
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
   optionContent: {
     flex: 1,
@@ -794,48 +857,52 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 13,
     fontWeight: "600",
-    color: "#4B5563",
+    color: "#DCE3DC",
   },
   selectedOptionText: {
-    color: "#1C5BFF",
+    color: "#A8D8A8",
   },
   memberAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#E8EEFF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    borderWidth: 1,
+    borderColor: "rgba(168, 216, 168, 0.25)",
   },
   avatarText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#1C5BFF",
+    color: "#A8D8A8",
   },
   memberEmail: {
     fontSize: 11,
-    color: "#9CA3AF",
+    color: "#8E998F",
     marginTop: 2,
   },
   selectedInfo: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 12,
+    gap: 7,
+    paddingHorizontal: 13,
     paddingVertical: 9,
     borderRadius: 10,
-    backgroundColor: "#F5F8FF",
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    borderWidth: 1,
+    borderColor: "rgba(168, 216, 168, 0.15)",
   },
   selectedInfoText: {
     flex: 1,
     fontSize: 12,
     fontWeight: "600",
-    color: "#1C5BFF",
+    color: "#A8D8A8",
   },
   clearText: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#DC2626",
+    color: "#FF8A8A",
   },
   deadlineActions: {
     flexDirection: "row",
@@ -843,28 +910,30 @@ const styles = StyleSheet.create({
   },
   dateButton: {
     flex: 1,
-    minHeight: 64,
+    minHeight: 60,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 13,
-    borderRadius: 13,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   dateButtonContent: {
     flex: 1,
-    gap: 3,
+    gap: 2,
   },
   dateButtonLabel: {
-    fontSize: 11,
-    color: "#9CA3AF",
+    fontSize: 10,
+    color: "#8E998F",
+    textTransform: "uppercase",
+    letterSpacing: 0.8,
   },
   dateButtonValue: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#374151",
+    color: "#F5F7F3",
   },
   deadlinePreview: {
     flexDirection: "row",
@@ -873,11 +942,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 9,
     borderRadius: 10,
-    backgroundColor: "#F3F4F6",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.06)",
   },
   deadlinePreviewText: {
     fontSize: 12,
-    color: "#4B5563",
+    color: "#DCE3DC",
   },
   statusContainer: {
     flexDirection: "row",
@@ -891,40 +962,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
   selectedStatusButton: {
-    backgroundColor: "#1C5BFF",
-    borderColor: "#1C5BFF",
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    borderColor: "#A8D8A8",
   },
   statusButtonText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#6B7280",
+    color: "#8E998F",
   },
   selectedStatusButtonText: {
-    color: "#FFFFFF",
+    color: "#A8D8A8",
+    fontWeight: "700",
   },
   actions: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 4,
+    marginTop: 8,
   },
   cancelButton: {
     minHeight: 50,
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 13,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
   },
   cancelButtonText: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#4B5563",
+    color: "#DCE3DC",
   },
   submitButton: {
     flex: 1,
@@ -933,15 +1005,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    borderRadius: 13,
-    backgroundColor: "#1C5BFF",
+    borderRadius: 14,
+    backgroundColor: "#A8D8A8",
   },
   disabledButton: {
     opacity: 0.6,
   },
   submitButtonText: {
     fontSize: 13,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontWeight: "800",
+    color: "#0A0E0A",
   },
 });

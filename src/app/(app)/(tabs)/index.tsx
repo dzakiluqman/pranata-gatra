@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useState } from "react";
@@ -222,7 +222,6 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   );
 
   const workspaces = Array.from(workspaceMap.values());
-  const workspaceIds = workspaces.map((workspace) => workspace.id);
 
   const workspaceTaskCounts: WorkspaceTaskCount = {};
   workspaces.forEach((workspace) => {
@@ -342,7 +341,7 @@ export default function Dashboard() {
           )}
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Progress</Text>
+            <Text style={styles.sectionTitle}>{"Today's Progress"}</Text>
             <GlassCard>
               <View style={styles.progressTextContainer}>
                 <Text style={styles.progressText}>
@@ -409,7 +408,7 @@ export default function Dashboard() {
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Today's Schedule</Text>
+            <Text style={styles.sectionTitle}>{"Today's Schedule"}</Text>
             {todaySchedules.length === 0 ? (
               <GlassCard>
                 <View style={styles.emptyState}>

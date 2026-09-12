@@ -1,4 +1,4 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useCallback, useState } from "react";
@@ -11,15 +11,16 @@ import {
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import GlassCard from "../../../../components/ui/GlassCard";
+
 import {
   formatRecurrence,
   useSubjectSchedules,
   type Schedule,
+  type Subject,
 } from "../../../../features/schedule";
-
-import type { Subject } from "../../../../features/schedule";
 import { supabase } from "../../../../lib/supabase/client";
 
 function formatTime(time: string | null) {
@@ -37,6 +38,7 @@ function formatDate(date: string) {
 }
 
 export default function SubjectDetailScreen() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     subjectId: string;
   }>();
@@ -51,11 +53,12 @@ export default function SubjectDetailScreen() {
 
   const { data: schedules = [] } = useSubjectSchedules(subjectId);
 
+
   const loadSubject = useCallback(async () => {
     if (!subjectId) return;
 
     try {
-      setLoading(true);
+      setLoading((prev) => (prev ? prev : true));
 
       const { data: subjectData, error: subjectError } = await supabase
         .from("subjects")
@@ -184,8 +187,15 @@ export default function SubjectDetailScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          {
+            paddingTop: insets.top + 10,
+            paddingBottom: insets.bottom + 40,
+          },
+        ]}
       >
+
         <View style={styles.navigation}>
           <Pressable style={styles.backIcon} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={21} color="#F5F7F3" />

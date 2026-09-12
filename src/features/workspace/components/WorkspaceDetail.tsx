@@ -126,6 +126,28 @@ export function WorkspaceDetail({
         </Pressable>
 
         <Pressable
+          onPress={onMembers}
+          style={({ pressed }) => [
+            styles.navigationCard,
+            pressed && styles.pressed,
+          ]}
+        >
+          <View style={styles.navigationIcon}>
+            <Ionicons name="people-outline" size={20} color="#DDE5DD" />
+          </View>
+
+          <View style={styles.navigationContent}>
+            <Text style={styles.navigationTitle}>Members</Text>
+
+            <Text style={styles.navigationDescription}>
+              Kelola member dan invitation workspace.
+            </Text>
+          </View>
+
+          <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
+        </Pressable>
+
+        <Pressable
           onPress={onEdit}
           style={({ pressed }) => [
             styles.navigationCard,
@@ -147,28 +169,6 @@ export function WorkspaceDetail({
           <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
         </Pressable>
       </View>
-
-      <Pressable
-        onPress={onMembers}
-        style={({ pressed }) => [
-          styles.navigationCard,
-          pressed && styles.pressed,
-        ]}
-      >
-        <View style={styles.navigationIcon}>
-          <Text style={styles.navigationContent}>M</Text>
-        </View>
-
-        <View style={styles.navigationContent}>
-          <Text style={styles.navigationTitle}>Members</Text>
-
-          <Text style={styles.navigationDescription}>
-            Kelola member dan invitation workspace.
-          </Text>
-        </View>
-
-        <Text style={styles.navigation}>›</Text>
-      </Pressable>
 
       <Pressable
         onPress={onDelete}

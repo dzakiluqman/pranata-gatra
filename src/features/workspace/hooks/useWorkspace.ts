@@ -1,42 +1,33 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
-    deleteWorkspace,
-    getWorkspaceById,
-    updateWorkspace,
+  deleteWorkspace,
+  getWorkspaceById,
+  updateWorkspace,
 } from '../services/workspaceService';
 
 import type {
-    UpdateWorkspaceInput,
-    Workspace,
+  UpdateWorkspaceInput,
+  Workspace,
 } from '../types/workspace.types';
 
 export function useWorkspace(workspaceId: string) {
-  const [workspace, setWorkspace] =
-    useState<Workspace | null>(null);
-
-  const [isLoading, setIsLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState<Error | null>(null);
+  const [workspace, setWorkspace] = useState<Workspace | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const fetchWorkspace = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
 
-      const data =
-        await getWorkspaceById(workspaceId);
-
+      const data = await getWorkspaceById(workspaceId);
       setWorkspace(data);
     } catch (err) {
       setError(
         err instanceof Error
           ? err
-          : new Error(
-              'Failed to fetch workspace.',
-            ),
+          : new Error('Failed to fetch workspace.'),
       );
     } finally {
       setIsLoading(false);
@@ -44,26 +35,45 @@ export function useWorkspace(workspaceId: string) {
   }, [workspaceId]);
 
   useEffect(() => {
-    fetchWorkspace();
-  }, [fetchWorkspace]);
+    let isMounted = true;
 
-  const editWorkspace = async (
-    input: UpdateWorkspaceInput,
-  ) => {
-    const updated =
-      await updateWorkspace(
-        workspaceId,
-        input,
-      );
+    async function load() {
+      try {
+        setError(null);
+        const data = await getWorkspaceById(workspaceId);
+        if (isMounted) {
+          setWorkspace(data);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err instanceof Error
+              ? err
+              : new Error('Failed to fetch workspace.'),
+          );
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
 
+    load();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [workspaceId]);
+
+  const editWorkspace = async (input: UpdateWorkspaceInput) => {
+    const updated = await updateWorkspace(workspaceId, input);
     setWorkspace(updated);
-
     return updated;
   };
 
   const removeWorkspace = async () => {
     await deleteWorkspace(workspaceId);
-
     setWorkspace(null);
   };
 

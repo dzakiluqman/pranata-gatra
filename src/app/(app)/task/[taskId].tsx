@@ -1,16 +1,17 @@
-﻿import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
   TaskPriorityBadge,
@@ -25,6 +26,7 @@ import {
 } from "@/features/task";
 
 export default function TaskDetailScreen() {
+  const insets = useSafeAreaInsets();
   const { taskId } = useLocalSearchParams<{
     taskId: string;
   }>();
@@ -123,21 +125,29 @@ export default function TaskDetailScreen() {
 
   if (taskQuery.isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.center}>
-          <ActivityIndicator size="large" color="#1C5BFF" />
+          <ActivityIndicator size="large" color="#A8D8A8" />
           <Text style={styles.loadingText}>Memuat detail tugas...</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   if (taskQuery.error || !task) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+        <LinearGradient
+          colors={["#0D1610", "#182A1C", "#060A08"]}
+          style={StyleSheet.absoluteFill}
+        />
         <View style={styles.center}>
           <View style={styles.errorIcon}>
-            <Ionicons name="alert-circle-outline" size={34} color="#EF4444" />
+            <Ionicons name="alert-circle-outline" size={34} color="#FF8A8A" />
           </View>
 
           <Text style={styles.errorTitle}>Tugas tidak ditemukan</Text>
@@ -148,45 +158,59 @@ export default function TaskDetailScreen() {
               : "Tugas yang kamu cari tidak tersedia."}
           </Text>
 
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>Kembali</Text>
+          <Pressable style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backBtnText}>Kembali</Text>
           </Pressable>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   const priorityInfo = getTaskPriorityInfo(task.deadline);
-
   const overdue = isTaskOverdue(task.deadline);
-
   const isCompleted = task.status === "completed";
-
   const isProcessing =
     completeMutation.isPending || reopenMutation.isPending || isDeleting;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
+      <LinearGradient
+        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
+        locations={[0, 0.3, 0.55, 0.8, 1]}
+        start={{ x: -0.5, y: 0 }}
+        end={{ x: 1.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
+      />
+
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(insets.bottom, 24) + 40 },
+        ]}
       >
         <View style={styles.topBar}>
-          <Pressable style={styles.iconButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={22} color="#111827" />
+          <Pressable
+            style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+            onPress={() => router.back()}
+          >
+            <Ionicons name="arrow-back" size={21} color="#F5F7F3" />
           </Pressable>
 
           <View style={styles.topBarActions}>
-            <Pressable style={styles.iconButton} onPress={handleEdit}>
-              <Ionicons name="create-outline" size={21} color="#111827" />
+            <Pressable
+              style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
+              onPress={handleEdit}
+            >
+              <Ionicons name="create-outline" size={20} color="#A8D8A8" />
             </Pressable>
 
             <Pressable
-              style={styles.iconButton}
+              style={({ pressed }) => [styles.iconButton, pressed && styles.pressed]}
               onPress={handleDelete}
               disabled={isProcessing}
             >
-              <Ionicons name="trash-outline" size={21} color="#EF4444" />
+              <Ionicons name="trash-outline" size={20} color="#FF8A8A" />
             </Pressable>
           </View>
         </View>
@@ -240,10 +264,10 @@ export default function TaskDetailScreen() {
               value={priorityInfo.label}
               valueColor={
                 priorityInfo.priority === "critical"
-                  ? "#EF4444"
+                  ? "#FF8A8A"
                   : priorityInfo.priority === "high"
-                    ? "#F97316"
-                    : "#374151"
+                    ? "#F59E0B"
+                    : "#DCE3DC"
               }
             />
 
@@ -255,7 +279,7 @@ export default function TaskDetailScreen() {
                   ? formatDeadlineRelative(task.deadline)
                   : "Tidak ada deadline"
               }
-              valueColor={overdue ? "#EF4444" : "#374151"}
+              valueColor={overdue ? "#FF8A8A" : "#DCE3DC"}
               last
             />
           </View>
@@ -274,7 +298,7 @@ export default function TaskDetailScreen() {
               <Ionicons
                 name={overdue ? "warning-outline" : "time-outline"}
                 size={22}
-                color={overdue ? "#EF4444" : "#1C5BFF"}
+                color={overdue ? "#FF8A8A" : "#A8D8A8"}
               />
             </View>
 
@@ -283,7 +307,12 @@ export default function TaskDetailScreen() {
                 {overdue ? "Deadline terlewat" : "Deadline"}
               </Text>
 
-              <Text style={styles.deadlineValue}>
+              <Text
+                style={[
+                  styles.deadlineValue,
+                  overdue && styles.deadlineValueOverdue,
+                ]}
+              >
                 {new Date(task.deadline).toLocaleString("id-ID", {
                   day: "numeric",
                   month: "long",
@@ -299,33 +328,39 @@ export default function TaskDetailScreen() {
         <View style={styles.actions}>
           {isCompleted ? (
             <Pressable
-              style={styles.secondaryAction}
+              style={({ pressed }) => [
+                styles.secondaryAction,
+                pressed && styles.pressed,
+              ]}
               onPress={handleReopen}
               disabled={isProcessing}
             >
               {reopenMutation.isPending ? (
-                <ActivityIndicator color="#1C5BFF" />
+                <ActivityIndicator color="#A8D8A8" />
               ) : (
                 <>
-                  <Ionicons name="refresh-outline" size={20} color="#1C5BFF" />
+                  <Ionicons name="refresh-outline" size={20} color="#A8D8A8" />
                   <Text style={styles.secondaryActionText}>Buka Kembali</Text>
                 </>
               )}
             </Pressable>
           ) : (
             <Pressable
-              style={styles.primaryAction}
+              style={({ pressed }) => [
+                styles.primaryAction,
+                pressed && styles.pressed,
+              ]}
               onPress={handleComplete}
               disabled={isProcessing}
             >
               {completeMutation.isPending ? (
-                <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#0A0E0A" />
               ) : (
                 <>
                   <Ionicons
                     name="checkmark-circle-outline"
                     size={21}
-                    color="#FFFFFF"
+                    color="#0A0E0A"
                   />
                   <Text style={styles.primaryActionText}>Tandai Selesai</Text>
                 </>
@@ -334,16 +369,16 @@ export default function TaskDetailScreen() {
           )}
 
           <Pressable
-            style={styles.editAction}
+            style={({ pressed }) => [styles.editAction, pressed && styles.pressed]}
             onPress={handleEdit}
             disabled={isProcessing}
           >
-            <Ionicons name="create-outline" size={20} color="#374151" />
+            <Ionicons name="create-outline" size={20} color="#DCE3DC" />
             <Text style={styles.editActionText}>Edit Tugas</Text>
           </Pressable>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -363,7 +398,7 @@ function DetailRow({
   return (
     <View style={[styles.detailRow, !last && styles.detailRowBorder]}>
       <View style={styles.detailIcon}>
-        <Ionicons name={icon} size={19} color="#6B7280" />
+        <Ionicons name={icon} size={18} color="#A8D8A8" />
       </View>
 
       <View style={styles.detailContent}>
@@ -385,32 +420,31 @@ function DetailRow({
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F6F8FC",
+    backgroundColor: "#060A08",
   },
   content: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingTop: 12,
+    paddingBottom: 60,
   },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 12,
-    paddingBottom: 20,
-  },
-  topBarActions: {
-    flexDirection: "row",
-    gap: 8,
+    marginBottom: 20,
   },
   iconButton: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
+    backgroundColor: "rgba(255, 255, 255, 0.06)",
+  },
+  topBarActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
   },
   hero: {
     marginBottom: 24,
@@ -419,115 +453,118 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginBottom: 13,
+    marginBottom: 12,
   },
   title: {
-    fontSize: 29,
-    lineHeight: 36,
+    fontSize: 24,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
+    lineHeight: 32,
   },
   description: {
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 23,
-    color: "#6B7280",
+    marginTop: 10,
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#8E998F",
   },
   noDescription: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 8,
+    fontSize: 13,
+    color: "#5C675D",
     fontStyle: "italic",
-    color: "#9CA3AF",
   },
   section: {
-    marginBottom: 18,
+    marginBottom: 22,
   },
   sectionTitle: {
-    marginBottom: 10,
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#111827",
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#DCE3DC",
+    marginBottom: 12,
   },
   card: {
     borderRadius: 18,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.04)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
-    overflow: "hidden",
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    paddingHorizontal: 16,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 14,
   },
   detailRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F1F3",
+    borderBottomColor: "rgba(255, 255, 255, 0.06)",
   },
   detailIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F3F4F6",
-    marginRight: 12,
+    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    marginRight: 13,
   },
   detailContent: {
     flex: 1,
   },
   detailLabel: {
-    fontSize: 12,
-    color: "#9CA3AF",
-    marginBottom: 3,
+    fontSize: 11,
+    color: "#8E998F",
+    marginBottom: 2,
   },
   detailValue: {
     fontSize: 14,
-    fontWeight: "700",
-    color: "#374151",
+    fontWeight: "600",
+    color: "#F5F7F3",
   },
   deadlineCard: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 15,
-    marginBottom: 18,
-    borderRadius: 17,
-    backgroundColor: "#EAF0FF",
+    padding: 16,
+    marginBottom: 22,
+    borderRadius: 16,
+    backgroundColor: "rgba(168, 216, 168, 0.06)",
     borderWidth: 1,
-    borderColor: "#D6E1FF",
+    borderColor: "rgba(168, 216, 168, 0.15)",
   },
   deadlineCardOverdue: {
-    backgroundColor: "#FEF2F2",
-    borderColor: "#FECACA",
+    backgroundColor: "rgba(239, 68, 68, 0.08)",
+    borderColor: "rgba(239, 68, 68, 0.2)",
   },
   deadlineIcon: {
-    width: 43,
-    height: 43,
-    borderRadius: 13,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FFFFFF",
-    marginRight: 12,
+    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    marginRight: 13,
   },
   deadlineIconOverdue: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(239, 68, 68, 0.12)",
   },
   deadlineContent: {
     flex: 1,
   },
   deadlineLabel: {
-    fontSize: 12,
-    color: "#6B7280",
+    fontSize: 11,
+    color: "#8E998F",
     marginBottom: 3,
   },
   deadlineValue: {
     fontSize: 14,
-    fontWeight: "800",
-    color: "#111827",
+    fontWeight: "700",
+    color: "#F5F7F3",
+  },
+  deadlineValueOverdue: {
+    color: "#FF8A8A",
   },
   actions: {
-    gap: 10,
+    gap: 11,
+    marginTop: 4,
   },
   primaryAction: {
     minHeight: 52,
@@ -536,10 +573,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
   primaryActionText: {
-    color: "#FFFFFF",
+    color: "#0A0E0A",
     fontSize: 15,
     fontWeight: "800",
   },
@@ -550,12 +587,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#EAF0FF",
+    backgroundColor: "rgba(168, 216, 168, 0.1)",
     borderWidth: 1,
-    borderColor: "#D6E1FF",
+    borderColor: "rgba(168, 216, 168, 0.2)",
   },
   secondaryActionText: {
-    color: "#1C5BFF",
+    color: "#A8D8A8",
     fontSize: 15,
     fontWeight: "800",
   },
@@ -566,12 +603,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "#E5E7EB",
+    borderColor: "rgba(255, 255, 255, 0.1)",
   },
   editActionText: {
-    color: "#374151",
+    color: "#DCE3DC",
     fontSize: 15,
     fontWeight: "700",
   },
@@ -583,38 +620,42 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 12,
-    color: "#6B7280",
+    color: "#8E998F",
     fontSize: 14,
   },
   errorIcon: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#FEE2E2",
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
     marginBottom: 16,
   },
   errorTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "800",
-    color: "#111827",
+    color: "#F5F7F3",
   },
   errorText: {
     marginTop: 8,
     textAlign: "center",
-    color: "#6B7280",
-    lineHeight: 21,
+    color: "#8E998F",
+    lineHeight: 20,
+    fontSize: 13,
   },
-  backButton: {
+  backBtn: {
     marginTop: 20,
     paddingHorizontal: 22,
     paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: "#1C5BFF",
+    backgroundColor: "#A8D8A8",
   },
-  backButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
+  backBtnText: {
+    color: "#0A0E0A",
+    fontWeight: "800",
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
