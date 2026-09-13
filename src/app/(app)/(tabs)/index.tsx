@@ -1,20 +1,21 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  Pressable,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
 
-import AppHeader from "../../../components/navigation/AppHeader";
-import GlassCard from "../../../components/ui/GlassCard";
-import { useTodaySchedules } from "../../../features/schedule";
-import { supabase } from "../../../lib/supabase/client";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
+import { useTodaySchedules } from '@/features/schedule';
+import { supabase } from '@/lib/supabase/client';
 
 type Task = {
   id: string;
@@ -63,10 +64,10 @@ const INITIAL_DATA: DashboardData = {
 };
 
 function formatTaskDeadline(deadline: string | null) {
-  if (!deadline) return "No deadline";
+  if (!deadline) return 'No deadline';
 
   const date = new Date(deadline);
-  if (Number.isNaN(date.getTime())) return "No deadline";
+  if (Number.isNaN(date.getTime())) return 'No deadline';
 
   const now = new Date();
 
@@ -84,23 +85,23 @@ function formatTaskDeadline(deadline: string | null) {
     date.getFullYear() === tomorrow.getFullYear();
 
   const time = date
-    .toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
+    .toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
       hour12: false,
     })
-    .replace(":", ".");
+    .replace(':', '.');
 
   if (isToday) return `Today, ${time}`;
   if (isTomorrow) return `Tomorrow, ${time}`;
 
-  const day = date.toLocaleDateString("en-US", { weekday: "long" });
+  const day = date.toLocaleDateString('en-US', { weekday: 'long' });
   return `${day}, ${time}`;
 }
 
 function formatScheduleTime(time: string | null) {
-  if (!time) return "--.--";
-  return time.slice(0, 5).replace(":", ".");
+  if (!time) return '--.--';
+  return time.slice(0, 5).replace(':', '.');
 }
 
 function formatScheduleRange(startTime: string | null, endTime: string | null) {
@@ -117,7 +118,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
   endOfToday.setHours(23, 59, 59, 999);
 
   const { data: tasks, error: tasksError } = await supabase
-    .from("tasks")
+    .from('tasks')
     .select(
       `
         id,
@@ -134,12 +135,12 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
       `,
     )
     .or(`assigned_to.eq.${userId},assigned_to.is.null`)
-    .order("deadline", { ascending: true, nullsFirst: false });
+    .order('deadline', { ascending: true, nullsFirst: false });
 
   if (tasksError) throw tasksError;
 
   const allTasks = (tasks ?? []) as Task[];
-  const completedStatuses = ["completed", "done", "finished", "complete"];
+  const completedStatuses = ['completed', 'done', 'finished', 'complete'];
 
   const activeTasks = allTasks.filter(
     (task) => !completedStatuses.includes(task.status.toLowerCase()),
@@ -164,27 +165,27 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
     .slice(0, 5);
 
   const { data: ownedWorkspaces, error: ownedError } = await supabase
-    .from("workspaces")
+    .from('workspaces')
     .select(
       `
-          id,
-          owner_id,
-          name,
-          description,
-          deadline,
-          created_at,
-          updated_at
-        `,
+        id,
+        owner_id,
+        name,
+        description,
+        deadline,
+        created_at,
+        updated_at
+      `,
     )
-    .eq("owner_id", userId)
-    .order("created_at", { ascending: false });
+    .eq('owner_id', userId)
+    .order('created_at', { ascending: false });
 
   if (ownedError) throw ownedError;
 
   const { data: memberships, error: membershipsError } = await supabase
-    .from("workspace_members")
-    .select("workspace_id")
-    .eq("user_id", userId);
+    .from('workspace_members')
+    .select('workspace_id')
+    .eq('user_id', userId);
 
   if (membershipsError) throw membershipsError;
 
@@ -195,7 +196,7 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
 
   if (memberWorkspaceIds.length > 0) {
     const { data, error } = await supabase
-      .from("workspaces")
+      .from('workspaces')
       .select(
         `
           id,
@@ -207,8 +208,8 @@ async function fetchDashboardData(userId: string): Promise<DashboardData> {
           updated_at
         `,
       )
-      .in("id", memberWorkspaceIds)
-      .order("created_at", { ascending: false });
+      .in('id', memberWorkspaceIds)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
     memberWorkspaces = (data ?? []) as Workspace[];
@@ -260,18 +261,17 @@ export default function Dashboard() {
       } = await supabase.auth.getUser();
 
       if (userError) throw userError;
-      if (!user) throw new Error("User belum login.");
+      if (!user) throw new Error('User belum login.');
 
       const dashboardData = await fetchDashboardData(user.id);
       setData(dashboardData);
 
-      // Set first workspace for schedules
       if (dashboardData.workspaces.length > 0) {
         setCurrentWorkspaceId(dashboardData.workspaces[0].id);
       }
     } catch (err) {
-      console.error("[Dashboard] Failed to load:", err);
-      setError(err instanceof Error ? err.message : "Gagal memuat dashboard.");
+      console.error('[Dashboard] Failed to load:', err);
+      setError(err instanceof Error ? err.message : 'Gagal memuat dashboard.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -289,211 +289,195 @@ export default function Dashboard() {
     loadDashboard();
   }, [loadDashboard]);
 
+  const totalTasks = data.activeTasks + data.completedTasks;
   const progressPercentage =
-    data.activeTasks + data.completedTasks > 0
-      ? Math.min(
-          100,
-          (data.completedTasks / (data.activeTasks + data.completedTasks)) *
-            100,
-        )
+    totalTasks > 0
+      ? Math.min(100, Math.round((data.completedTasks / totalTasks) * 100))
       : 0;
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
-        locations={[0, 0.3, 0.55, 0.8, 1]}
-        start={{ x: -0.5, y: 0 }}
-        end={{ x: 1.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
-
-      <AppHeader />
-
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F5F7F3" />
-          <Text style={styles.loadingText}>Loading dashboard...</Text>
-        </View>
-      ) : (
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#F5F7F3"
-            />
-          }
+      {/* Scrollable container with top gradient and black curved sheet */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={COLORS.primaryGold}
+          />
+        }
+      >
+        {/* Top Section with Gold Gradient: Header + Today's Progress */}
+        <LinearGradient
+          colors={COLORS.goldHeaderGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.topGradientContainer}
         >
-          {error && (
-            <GlassCard style={styles.errorCard}>
-              <View style={styles.errorContent}>
-                <Ionicons
-                  name="alert-circle-outline"
-                  size={22}
-                  color="#FF8A8A"
-                />
-                <Text style={styles.errorText}>{error}</Text>
-              </View>
-            </GlassCard>
-          )}
+          {/* AppHeader inside the top gold container */}
+          <AppHeader />
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{"Today's Progress"}</Text>
-            <GlassCard>
-              <View style={styles.progressTextContainer}>
-                <Text style={styles.progressText}>
-                  <Text style={styles.boldText}>{data.activeTasks} </Text>Tasks
-                  Active
-                </Text>
-                <Text style={styles.progressText}>
-                  <Text style={styles.boldText}>{data.completedTasks} </Text>
-                  Completed
-                </Text>
-                <Text style={styles.progressText}>
-                  <Text style={styles.boldText}>{data.remainingTasks} </Text>
-                  Tasks Remaining
-                </Text>
+          {/* Today's Progress Section */}
+          <View style={styles.progressSection}>
+            <Text style={styles.progressHeading}>Today’s Progress</Text>
+
+            {/* 3 Metric Cards */}
+            <View style={styles.cardsRow}>
+              {/* Active Tasks */}
+              <View style={styles.metricCard}>
+                <Text style={styles.metricNumber}>{data.activeTasks}</Text>
+                <Text style={styles.metricLabel}>{'Tasks\nActive'}</Text>
               </View>
 
-              <View style={styles.progressBarTrack}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${Math.max(progressPercentage, 8)}%` },
-                  ]}
-                />
+              {/* Completed Tasks */}
+              <View style={styles.metricCard}>
+                <Text style={styles.metricNumber}>{data.completedTasks}</Text>
+                <Text style={styles.metricLabel}>{'Tasks\nCompleted'}</Text>
               </View>
-            </GlassCard>
+
+              {/* Remaining Tasks */}
+              <View style={styles.metricCard}>
+                <Text style={styles.metricNumber}>{data.remainingTasks}</Text>
+                <Text style={styles.metricLabel}>{'Tasks\nRemaining'}</Text>
+              </View>
+            </View>
+
+            {/* Progress Bar */}
+            <View style={styles.progressBarTrack}>
+              <LinearGradient
+                colors={COLORS.goldGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${Math.max(progressPercentage > 0 ? progressPercentage : 15, 0)}%`,
+                  },
+                ]}
+              />
+            </View>
           </View>
+        </LinearGradient>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
-            <GlassCard style={styles.taskListCard}>
-              {data.upcomingTasks.length === 0 ? (
-                <View style={styles.emptyState}>
-                  <Ionicons
-                    name="checkmark-circle-outline"
-                    size={28}
-                    color="#8E998F"
-                  />
-                  <Text style={styles.emptyTitle}>No upcoming tasks</Text>
-                  <Text style={styles.emptySubtitle}>
-                    You have no upcoming deadlines.
-                  </Text>
-                </View>
-              ) : (
-                data.upcomingTasks.map((task) => (
-                  <View key={task.id} style={styles.taskItem}>
-                    <View style={styles.taskLeft}>
-                      <Ionicons
-                        name="pin-outline"
-                        size={16}
-                        color="#E3E8E2"
-                        style={styles.pinIcon}
-                      />
-                      <Text style={styles.taskTitle} numberOfLines={1}>
-                        {task.title}
-                      </Text>
+        {/* Black Curved Sheet */}
+        <View style={styles.blackSheet}>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={COLORS.primaryGold} />
+              <Text style={styles.loadingText}>Memuat dashboard...</Text>
+            </View>
+          ) : (
+            <>
+              {/* Section 1: Upcoming Tasks */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
+
+                <View style={styles.tasksContainer}>
+                  {data.upcomingTasks.length === 0 ? (
+                    <View style={styles.emptyTaskRow}>
+                      <Ionicons name="checkmark-done-outline" size={20} color={COLORS.primaryGold} />
+                      <Text style={styles.emptyText}>Tidak ada tugas mendatang</Text>
                     </View>
-                    <Text style={styles.taskTime}>
-                      {formatTaskDeadline(task.deadline)}
-                    </Text>
+                  ) : (
+                    data.upcomingTasks.map((task) => (
+                      <Pressable
+                        key={task.id}
+                        style={({ pressed }) => [
+                          styles.taskRow,
+                          pressed && styles.pressed,
+                        ]}
+                        onPress={() =>
+                          router.push({
+                            pathname: '/(app)/task/[taskId]',
+                            params: { taskId: task.id },
+                          })
+                        }
+                      >
+                        <View style={styles.taskLeft}>
+                          <Ionicons name="pin-outline" size={18} color={COLORS.secondaryLightGold} />
+                          <Text style={styles.taskTitle} numberOfLines={1}>
+                            {task.title}
+                          </Text>
+                        </View>
+                        <Text style={styles.taskDeadline}>
+                          {formatTaskDeadline(task.deadline)}
+                        </Text>
+                      </Pressable>
+                    ))
+                  )}
+                </View>
+              </View>
+
+              {/* Section 2: Today's Schedule */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Today’s Schedule</Text>
+
+                {todaySchedules.length === 0 ? (
+                  <View style={styles.schedulePill}>
+                    <Text style={styles.emptyText}>Tidak ada jadwal kelas untuk hari ini</Text>
                   </View>
-                ))
-              )}
-            </GlassCard>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{"Today's Schedule"}</Text>
-            {todaySchedules.length === 0 ? (
-              <GlassCard>
-                <View style={styles.emptyState}>
-                  <Ionicons name="calendar-outline" size={28} color="#8E998F" />
-                  <Text style={styles.emptyTitle}>No schedule today</Text>
-                  <Text style={styles.emptySubtitle}>
-                    There are no subjects scheduled for today.
-                  </Text>
-                </View>
-              </GlassCard>
-            ) : (
-              <View style={styles.scheduleContainer}>
-                {todaySchedules.map((schedule) => (
-                  <GlassCard key={schedule.id} style={styles.scheduleCard}>
-                    <View style={styles.scheduleRow}>
+                ) : (
+                  todaySchedules.map((schedule) => (
+                    <View key={schedule.id} style={styles.schedulePill}>
                       <Text style={styles.scheduleTime}>
-                        {formatScheduleRange(
-                          schedule.startTime,
-                          schedule.endTime,
-                        )}
+                        {formatScheduleRange(schedule.start_time, schedule.end_time)}
                       </Text>
-                      <Text style={styles.scheduleTitle} numberOfLines={1}>
-                        {schedule.subject?.name ?? "Subject"}
+                      <Text style={styles.scheduleSubject} numberOfLines={1}>
+                        {schedule.subject?.name || 'Kuliah'}
                       </Text>
                     </View>
-                  </GlassCard>
-                ))}
+                  ))
+                )}
               </View>
-            )}
-          </View>
 
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Workspace Overview</Text>
-            {data.workspaces.length === 0 ? (
-              <GlassCard>
-                <View style={styles.emptyState}>
-                  <Ionicons
-                    name="folder-open-outline"
-                    size={28}
-                    color="#8E998F"
-                  />
-                  <Text style={styles.emptyTitle}>No workspaces yet</Text>
-                  <Text style={styles.emptySubtitle}>
-                    Create or join a workspace to get started.
-                  </Text>
+              {/* Section 3: Workspace Overview */}
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Workspace Overview</Text>
+
+                <View style={styles.workspaceGrid}>
+                  {data.workspaces.slice(0, 4).map((workspace) => {
+                    const taskCount = data.workspaceTaskCounts[workspace.id] ?? 0;
+                    return (
+                      <Pressable
+                        key={workspace.id}
+                        style={({ pressed }) => [
+                          styles.workspaceCard,
+                          pressed && styles.pressed,
+                        ]}
+                        onPress={() =>
+                          router.push(`/(app)/workspace/${workspace.id}` as any)
+                        }
+                      >
+                        <View>
+                          <Text style={styles.workspaceName} numberOfLines={1}>
+                            {workspace.name}
+                          </Text>
+                          <Text style={styles.workspaceTaskSubtitle}>
+                            {taskCount > 0
+                              ? `You have ${taskCount} tasks today`
+                              : 'Tidak ada tugas aktif'}
+                          </Text>
+                        </View>
+
+                        <View style={styles.workspaceFooter}>
+                          <Text style={styles.workspaceFooterText}>
+                            {workspace.description?.toLowerCase().includes('collaborative')
+                              ? 'Collaborative Workspace'
+                              : 'Personal Workspace'}
+                          </Text>
+                          <Ionicons name="arrow-forward" size={13} color="#8E8E93" />
+                        </View>
+                      </Pressable>
+                    );
+                  })}
                 </View>
-              </GlassCard>
-            ) : (
-              <View style={styles.workspaceContainer}>
-                {data.workspaces.slice(0, 4).map((workspace) => {
-                  const taskCount = data.workspaceTaskCounts[workspace.id] ?? 0;
-                  return (
-                    <GlassCard key={workspace.id} style={styles.workspaceCard}>
-                      <View>
-                        <Text style={styles.workspaceTitle} numberOfLines={1}>
-                          {workspace.name}
-                        </Text>
-                        <Text style={styles.workspaceSubtitle}>
-                          You have {taskCount}{" "}
-                          {taskCount === 1 ? "task" : "tasks"} today
-                        </Text>
-                      </View>
-
-                      <View style={styles.workspaceFooter}>
-                        <Text style={styles.workspaceType}>
-                          {workspace.owner_id
-                            ? "Personal Workspace"
-                            : "Collaborative Workspace"}
-                        </Text>
-                        <Ionicons
-                          name="arrow-forward"
-                          size={12}
-                          color="#C4CCC3"
-                        />
-                      </View>
-                    </GlassCard>
-                  );
-                })}
               </View>
-            )}
-          </View>
-
-          <View style={styles.bottomSpacer} />
-        </ScrollView>
-      )}
+            </>
+          )}
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -501,179 +485,211 @@ export default function Dashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
   scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 110,
+    backgroundColor: COLORS.bgBlack,
+  },
+  topGradientContainer: {
+    width: '100%',
+    paddingBottom: 24,
+  },
+  progressSection: {
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 120,
+    marginTop: 4,
   },
-  section: {
-    marginBottom: 26,
+  progressHeading: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.textDark,
+    marginBottom: 14,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    marginBottom: 16,
-    letterSpacing: 0.3,
-  },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: "#8E998F",
-  },
-  errorCard: {
-    marginBottom: 20,
-  },
-  errorContent: {
-    flexDirection: "row",
-    alignItems: "center",
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     gap: 10,
-  },
-  errorText: {
-    flex: 1,
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#FF8A8A",
-  },
-  progressTextContainer: {
-    gap: 8,
     marginBottom: 16,
   },
-  progressText: {
-    fontSize: 15,
-    color: "#D4DDD3",
-    fontWeight: "400",
-    letterSpacing: 0.2,
+  metricCard: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#161618',
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  boldText: {
-    fontWeight: "700",
-    color: "#FFFFFF",
-    fontSize: 15,
+  metricNumber: {
+    fontFamily: FONTS.bold,
+    fontSize: 28,
+    color: COLORS.secondaryLightGold,
+  },
+  metricLabel: {
+    fontFamily: FONTS.medium,
+    fontSize: 10,
+    lineHeight: 13,
+    color: COLORS.textLight,
   },
   progressBarTrack: {
-    height: 16,
-    backgroundColor: "rgba(0, 0, 0, 0.3)",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.15)",
-    padding: 2,
-    justifyContent: "center",
+    width: '100%',
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: '#161618',
+    overflow: 'hidden',
   },
   progressBarFill: {
-    height: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.85)",
+    height: '100%',
+    borderRadius: 6,
+  },
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    marginTop: -8,
+  },
+  section: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    color: COLORS.goldText,
+    marginBottom: 12,
+  },
+  tasksContainer: {
+    backgroundColor: COLORS.bgCard,
     borderRadius: 20,
-    shadowColor: "#FFFFFF",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 10,
-    elevation: 8,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    paddingVertical: 6,
+    paddingHorizontal: 16,
   },
-  taskListCard: {
-    gap: 18,
-  },
-  taskItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
+  taskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 13,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   taskLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  pinIcon: {
-    transform: [{ rotate: "-45deg" }],
   },
   taskTitle: {
-    flex: 1,
-    fontSize: 14,
-    color: "#E3E8E2",
-    fontWeight: "400",
-  },
-  taskTime: {
+    fontFamily: FONTS.medium,
     fontSize: 13,
-    color: "#A2AFA1",
+    color: COLORS.textLight,
+    flex: 1,
   },
-  scheduleContainer: {
-    gap: 14,
+  taskDeadline: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginLeft: 10,
   },
-  scheduleCard: {
-    borderRadius: 100,
-    paddingVertical: 16,
-    paddingHorizontal: 24,
+  emptyTaskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 20,
   },
-  scheduleRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  emptyText: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
+  schedulePill: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   scheduleTime: {
-    fontSize: 14,
-    color: "#D4DDD3",
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: COLORS.textLight,
   },
-  scheduleTitle: {
-    fontSize: 14,
-    color: "#E3E8E2",
-    fontWeight: "400",
+  scheduleSubject: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.textLight,
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 12,
   },
-  workspaceContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+  workspaceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
   },
   workspaceCard: {
-    width: "48%",
-    minHeight: 115,
-    padding: 18,
-    justifyContent: "space-between",
+    width: '48%',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    padding: 16,
+    minHeight: 120,
+    justifyContent: 'space-between',
   },
-  workspaceTitle: {
+  workspaceName: {
+    fontFamily: FONTS.bold,
     fontSize: 14,
-    fontWeight: "500",
-    color: "#FFFFFF",
-    marginBottom: 6,
+    color: COLORS.textLight,
   },
-  workspaceSubtitle: {
+  workspaceTaskSubtitle: {
+    marginTop: 6,
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "#9EA89D",
+    lineHeight: 15,
+    color: COLORS.textMuted,
   },
   workspaceFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
   },
-  workspaceType: {
+  workspaceFooterText: {
+    fontFamily: FONTS.regular,
     fontSize: 10,
-    color: "#C4CCC3",
+    color: COLORS.textMuted,
   },
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 12,
-    gap: 8,
+  loadingContainer: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  emptyTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#F5F7F3",
+  loadingText: {
+    marginTop: 12,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
-  emptySubtitle: {
-    fontSize: 12,
-    color: "#8E998F",
-    textAlign: "center",
-  },
-  bottomSpacer: {
-    height: 40,
+  pressed: {
+    opacity: 0.75,
   },
 });

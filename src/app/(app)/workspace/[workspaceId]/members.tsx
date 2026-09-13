@@ -1,12 +1,13 @@
-import { Ionicons } from "@expo/vector-icons";
-import { router, Stack, useLocalSearchParams } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from '@expo/vector-icons';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { WorkspaceMembers } from "@/features/workspace/components/WorkspaceMembers";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
+import { WorkspaceMembers } from '@/features/workspace/components/WorkspaceMembers';
 
 export default function WorkspaceMembersPage() {
-  const insets = useSafeAreaInsets();
   const { workspaceId } = useLocalSearchParams<{
     workspaceId: string;
   }>();
@@ -16,54 +17,77 @@ export default function WorkspaceMembersPage() {
   }
 
   return (
-    <View style={[styles.safeArea, { paddingBottom: insets.bottom }]}>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          title: "Members",
-          headerShadowVisible: false,
-          headerStyle: {
-            backgroundColor: "#060A08",
-          },
-          headerTitleStyle: {
-            fontSize: 18,
-            fontWeight: "800",
-            color: "#F5F7F3",
-          },
-          headerLeft: () => (
-            <Pressable
-              onPress={() => router.back()}
-              hitSlop={10}
-              style={styles.backButton}
-            >
-              <Ionicons name="chevron-back" size={24} color="#F5F7F3" />
-            </Pressable>
-          ),
-        }}
-      />
+    <View style={styles.container}>
+      <Stack.Screen options={{ headerShown: false }} />
 
-      <View style={styles.container}>
-        <WorkspaceMembers workspaceId={workspaceId} />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
+
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {/* Back chevron + Title */}
+        <View style={styles.topRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
+          <Text style={styles.title}>Workspace Members</Text>
+        </View>
+
+        <View style={styles.content}>
+          <WorkspaceMembers workspaceId={workspaceId} />
+        </View>
       </View>
+
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#060A08",
-  },
-
   container: {
     flex: 1,
+    backgroundColor: COLORS.bgBlack,
   },
-
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    marginTop: -8,
+  },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
   backButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.goldText,
+  },
+  content: {
+    flex: 1,
+    paddingBottom: 110,
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
-

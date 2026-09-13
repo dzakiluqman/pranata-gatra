@@ -1,371 +1,293 @@
-import { Ionicons } from "@expo/vector-icons";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useMemo } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import { useMemo } from 'react';
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 
-import { useWorkspaces } from "../hooks/useWorkspaces";
-import type { Workspace } from "../types/workspace.types";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
 
-const TAB_BAR_HEIGHT = 76;
+import { useWorkspaces } from '../hooks/useWorkspaces';
+import type { Workspace } from '../types/workspace.types';
 
 export default function WorkspaceScreen() {
-  const insets = useSafeAreaInsets();
-  const { workspaces = [], isLoading, error } = useWorkspaces();
+  const { workspaces = [], isLoading, error, refetch } = useWorkspaces();
 
-  const activeWorkspaces = useMemo(() => workspaces, [workspaces]);
-  const expiredWorkspaces: Workspace[] = useMemo(() => [], []);
+  // Separate active vs expired workspaces
+  const { activeWorkspaces, expiredWorkspaces } = useMemo(() => {
+    const now = new Date();
+    const active: Workspace[] = [];
+    const expired: Workspace[] = [];
+
+    workspaces.forEach((w) => {
+      if (w.deadline && new Date(w.deadline) < now) {
+        expired.push(w);
+      } else {
+        active.push(w);
+      }
+    });
+
+    return { activeWorkspaces: active, expiredWorkspaces: expired };
+  }, [workspaces]);
 
   const handleOpenWorkspace = (workspaceId: string) => {
-    router.push(`/(app)/workspace/${workspaceId}`);
+    router.push(`/(app)/workspace/${workspaceId}` as any);
   };
 
   const handleCreateWorkspace = () => {
-    router.push("/(app)/workspace/create");
+    router.push('/(app)/workspace/create' as any);
   };
 
-  const renderWorkspace = ({ item }: { item: Workspace }) => {
+  const renderWorkspaceCard = (item: Workspace) => {
+    const isCollaborative = item.description?.toLowerCase().includes('collaborative');
+
     return (
       <Pressable
+        key={item.id}
         onPress={() => handleOpenWorkspace(item.id)}
         style={({ pressed }) => [
-          styles.cardContainer,
+          styles.workspaceCard,
           pressed && styles.pressed,
         ]}
       >
-        <BlurView intensity={50} tint="dark" style={styles.workspaceCard}>
-          {/* Efek kilau (glare) di dalam card agar terlihat seperti kaca */}
-          <LinearGradient
-            colors={[
-              "rgba(255, 255, 255, 0.12)",
-              "rgba(255, 255, 255, 0)",
-              "rgba(255, 255, 255, 0)",
-            ]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={StyleSheet.absoluteFill}
-          />
+        <View style={styles.cardTop}>
+          <Text numberOfLines={1} style={styles.workspaceName}>
+            {item.name}
+          </Text>
+          <Text numberOfLines={2} style={styles.workspaceDescription}>
+            {item.description || 'Penjadwalan tugas dan kelas.'}
+          </Text>
+        </View>
 
-          <View style={styles.cardContent}>
-            <View style={styles.cardTop}>
-              <View style={styles.cardInfo}>
-                <Text numberOfLines={1} style={styles.workspaceName}>
-                  {item.name}
-                </Text>
-
-                <Text numberOfLines={2} style={styles.workspaceDescription}>
-                  {item.description || "Tidak ada deskripsi workspace."}
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.cardFooter}>
-              <Text style={styles.workspaceType}>Personal Workspace</Text>
-              <Ionicons name="arrow-forward" size={14} color="#D5DAD6" />
-            </View>
-          </View>
-        </BlurView>
+        <View style={styles.cardFooter}>
+          <Text style={styles.workspaceType}>
+            {isCollaborative ? 'Collaborative Workspace' : 'Personal Workspace'}
+          </Text>
+          <Ionicons name="arrow-forward" size={13} color="#8E8E93" />
+        </View>
       </Pressable>
     );
   };
 
-  const renderSection = (title: string, data: Workspace[]) => (
-    <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
-
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.id}
-        renderItem={renderWorkspace}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        scrollEnabled={false}
-      />
-    </View>
-  );
-
-  if (isLoading) {
-    return (
-      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#F5F7F3" />
-          <Text style={styles.loadingText}>Memuat workspace...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={34} color="#F5F7F3" />
-          <Text style={styles.errorTitle}>Gagal memuat workspace</Text>
-          <Text style={styles.errorMessage}>
-            {error instanceof Error
-              ? error.message
-              : "Terjadi kesalahan saat mengambil data."}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
-    <View style={styles.mainContainer}>
-      {/* Background Gradient menggantikan backgroundGlowTop & Bottom manual */}
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
-        locations={[0, 0.3, 0.55, 0.8, 1]}
-        start={{ x: -0.5, y: 0 }}
-        end={{ x: 1.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <View style={styles.container}>
+      {/* Top Header with Gold Gradient */}
+      <AppHeader />
 
-      <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-        <View style={styles.container}>
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {isLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={COLORS.primaryGold} />
+            <Text style={styles.loadingText}>Memuat workspace...</Text>
+          </View>
+        ) : (
           <FlatList
             data={[]}
             renderItem={null}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={[
-              styles.listContent,
-              { paddingBottom: Math.max(insets.bottom, 16) + TAB_BAR_HEIGHT + 70 },
-            ]}
+            contentContainerStyle={styles.scrollContent}
+            refreshControl={
+              <RefreshControl
+                refreshing={isLoading}
+                onRefresh={refetch}
+                tintColor={COLORS.primaryGold}
+              />
+            }
             ListHeaderComponent={
               <>
-                {renderSection("Active Workspaces", activeWorkspaces)}
-                {expiredWorkspaces.length > 0 &&
-                  renderSection("Expired Workspaces", expiredWorkspaces)}
-                {activeWorkspaces.length === 0 &&
-                  expiredWorkspaces.length === 0 && (
-                    <View style={styles.emptyState}>
-                      <View style={styles.emptyIcon}>
-                        <Ionicons
-                          name="folder-open-outline"
-                          size={31}
-                          color="#DCE3DD"
-                        />
-                      </View>
-                      <Text style={styles.emptyTitle}>
-                        Belum ada workspace
-                      </Text>
-                      <Text style={styles.emptyDescription}>
-                        Buat workspace pertama untuk mulai berkolaborasi.
-                      </Text>
+                {/* Active Workspaces Section */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Active Workspaces</Text>
+
+                  {activeWorkspaces.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <Ionicons name="folder-open-outline" size={28} color={COLORS.primaryGold} />
+                      <Text style={styles.emptyText}>Belum ada workspace aktif</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.grid}>
+                      {activeWorkspaces.map(renderWorkspaceCard)}
                     </View>
                   )}
+                </View>
+
+                {/* Expired Workspaces Section */}
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Expired Workspaces</Text>
+
+                  {expiredWorkspaces.length === 0 ? (
+                    <View style={styles.emptyCard}>
+                      <Text style={styles.emptySubtext}>Tidak ada workspace yang kedaluwarsa</Text>
+                    </View>
+                  ) : (
+                    <View style={styles.grid}>
+                      {expiredWorkspaces.map(renderWorkspaceCard)}
+                    </View>
+                  )}
+                </View>
               </>
             }
           />
+        )}
 
-          {/* Floating Action Button dengan desain Glassmorphism */}
-          <Pressable
-            onPress={handleCreateWorkspace}
-            style={({ pressed }) => [
-              styles.fabContainer,
-              {
-                bottom: Math.max(insets.bottom, 12) + TAB_BAR_HEIGHT + 18,
-              },
-              pressed && styles.pressed,
-            ]}
+        {/* Floating Action Button (+) */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.fab,
+            pressed && styles.fabPressed,
+          ]}
+          onPress={handleCreateWorkspace}
+          hitSlop={10}
+        >
+          <LinearGradient
+            colors={COLORS.goldGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.fabGradient}
           >
-            <BlurView intensity={60} tint="dark" style={styles.fabBlur}>
-              <LinearGradient
-                colors={["rgba(255, 255, 255, 0.2)", "rgba(255, 255, 255, 0)"]}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                style={StyleSheet.absoluteFill}
-              />
-              <Ionicons name="add" size={32} color="#FFFFFF" />
-            </BlurView>
-          </Pressable>
-        </View>
+            <Ionicons name="add" size={32} color={COLORS.textDark} />
+          </LinearGradient>
+        </Pressable>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  mainContainer: {
-    flex: 1,
-    backgroundColor: "#060A08",
-  },
-  safeArea: {
-    flex: 1,
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 24,
+    backgroundColor: COLORS.bgBlack,
   },
-  listContent: {
-    paddingBottom: 24,
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 20,
+    paddingTop: 24,
+    marginTop: -8,
+  },
+  scrollContent: {
+    paddingBottom: 120,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    marginBottom: 11,
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F1F4F1",
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    color: COLORS.goldText,
+    marginBottom: 14,
   },
-  columnWrapper: {
-    justifyContent: "space-between",
-  },
-
-  // -- AREA CARD DESIGN --
-  cardContainer: {
-    width: "48%",
-    marginBottom: 12,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 14,
   },
   workspaceCard: {
-    minHeight: 142,
-    borderRadius: 24,
-    overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1.2,
-    borderTopColor: "rgba(255, 255, 255, 0.25)",
-    borderLeftColor: "rgba(255, 255, 255, 0.15)",
-    borderRightColor: "rgba(255, 255, 255, 0.03)",
-    borderBottomColor: "rgba(255, 255, 255, 0.03)",
-  },
-  cardContent: {
-    flex: 1,
-    justifyContent: "space-between",
+    width: '48%',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
     padding: 16,
+    minHeight: 124,
+    justifyContent: 'space-between',
   },
   cardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-  },
-  cardInfo: {
-    flex: 1,
+    marginBottom: 12,
   },
   workspaceName: {
+    fontFamily: FONTS.bold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#F1F4F1",
+    color: COLORS.textLight,
+    marginBottom: 6,
   },
   workspaceDescription: {
-    marginTop: 4,
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    lineHeight: 15,
-    color: "#9EA89D",
+    lineHeight: 16,
+    color: COLORS.textMuted,
   },
   cardFooter: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 8,
   },
   workspaceType: {
-    flex: 1,
+    fontFamily: FONTS.regular,
     fontSize: 10,
-    color: "#AAB3AB",
+    color: COLORS.textMuted,
+    flex: 1,
   },
-
-  // -- AREA FLOATING ACTION BUTTON --
-  fabContainer: {
-    position: "absolute",
-    right: 0,
-    zIndex: 20,
-    elevation: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-  },
-  fabBlur: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1.2,
-    borderTopColor: "rgba(255, 255, 255, 0.3)",
-    borderLeftColor: "rgba(255, 255, 255, 0.2)",
-    borderRightColor: "rgba(255, 255, 255, 0.05)",
-    borderBottomColor: "rgba(255, 255, 255, 0.05)",
-  },
-
-  // -- LAIN-LAIN --
-  emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
-    paddingTop: 65,
-  },
-  emptyIcon: {
-    width: 70,
-    height: 70,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 24,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+  emptyCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: COLORS.borderCard,
+    paddingVertical: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
-  emptyTitle: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F1F4F1",
-    textAlign: "center",
-  },
-  emptyDescription: {
-    maxWidth: 300,
-    marginTop: 7,
+  emptyText: {
+    fontFamily: FONTS.medium,
     fontSize: 13,
-    lineHeight: 20,
-    color: "#7E8980",
-    textAlign: "center",
+    color: COLORS.textLight,
+  },
+  emptySubtext: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
   },
   loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#060A08",
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
-    color: "#A3ADA5",
-  },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 40,
-    backgroundColor: "#060A08",
-  },
-  errorTitle: {
-    marginTop: 16,
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#F1F4F1",
-    textAlign: "center",
-  },
-  errorMessage: {
-    marginTop: 8,
+    fontFamily: FONTS.regular,
     fontSize: 13,
-    lineHeight: 20,
-    color: "#929B94",
-    textAlign: "center",
+    color: COLORS.textMuted,
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 96,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+    elevation: 8,
+    zIndex: 90,
+  },
+  fabGradient: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fabPressed: {
+    opacity: 0.85,
+    transform: [{ scale: 0.95 }],
   },
   pressed: {
-    opacity: 0.65,
-    transform: [{ scale: 0.96 }],
+    opacity: 0.75,
   },
 });

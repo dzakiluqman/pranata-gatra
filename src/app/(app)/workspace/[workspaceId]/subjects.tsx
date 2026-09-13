@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -11,19 +11,15 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
 
-import GlassCard from "../../../../components/ui/GlassCard";
-
-import { useSubjectMutation, useSubjects } from "../../../../features/schedule";
-
-import type { Subject } from "../../../../features/schedule";
-
-import SubjectForm from "../../../../features/schedule/components/SubjectForm";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
+import { useSubjectMutation, useSubjects } from '@/features/schedule';
+import type { Subject } from '@/features/schedule';
+import SubjectForm from '@/features/schedule/components/SubjectForm';
 
 export default function SubjectsScreen() {
-  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     workspaceId: string;
   }>();
@@ -54,27 +50,22 @@ export default function SubjectsScreen() {
 
   const handleDeleteSubject = (subject: Subject) => {
     Alert.alert(
-      "Hapus subject?",
+      'Hapus subject?',
       `Kamu yakin ingin menghapus "${subject.name}"? Schedule yang terkait juga akan dihapus.`,
       [
+        { text: 'Batal', style: 'cancel' },
         {
-          text: "Batal",
-          style: "cancel",
-        },
-        {
-          text: "Hapus",
-          style: "destructive",
+          text: 'Hapus',
+          style: 'destructive',
           onPress: async () => {
             try {
               setDeletingId(subject.id);
-              await deleteSubject(subject.id);
-              Alert.alert("Berhasil", "Subject berhasil dihapus.");
-            } catch (error) {
+              await deleteSubject.mutateAsync(subject.id);
+              refetch();
+            } catch (err) {
               Alert.alert(
-                "Gagal",
-                error instanceof Error
-                  ? error.message
-                  : "Subject gagal dihapus.",
+                'Gagal menghapus',
+                err instanceof Error ? err.message : 'Subject tidak dapat dihapus.',
               );
             } finally {
               setDeletingId(null);
@@ -85,318 +76,287 @@ export default function SubjectsScreen() {
     );
   };
 
-  const renderSubject = ({ item }: { item: Subject }) => (
-    <GlassCard style={styles.subjectCard}>
+  const renderSubjectCard = ({ item }: { item: Subject }) => (
+    <View style={styles.card}>
       <Pressable
         onPress={() =>
-          router.push({
-            pathname: "/workspace/subject/[subjectId]",
-            params: { subjectId: item.id, workspaceId: workspaceId },
-          })
+          router.push(`/(app)/workspace/${workspaceId}/subject/${item.id}` as any)
         }
+        style={({ pressed }) => [
+          styles.cardContent,
+          pressed && styles.pressed,
+        ]}
       >
-        <View style={styles.cardHeader}>
-          <View style={styles.cardContent}>
-            <Text style={styles.subjectName} numberOfLines={2}>
-              {item.name}
+        <View style={styles.iconBox}>
+          <Ionicons name="book-outline" size={20} color={COLORS.goldText} />
+        </View>
+
+        <View style={styles.cardInfo}>
+          <Text style={styles.subjectName} numberOfLines={1}>
+            {item.name}
+          </Text>
+          {item.lecturer && (
+            <Text style={styles.subjectMeta} numberOfLines={1}>
+              Dosen: {item.lecturer}
             </Text>
+          )}
+          {item.room && (
+            <Text style={styles.subjectMeta} numberOfLines={1}>
+              Ruang: {item.room}
+            </Text>
+          )}
+        </View>
 
-            {item.lecturer && (
-              <View style={styles.metaRow}>
-                <Ionicons
-                  name="person-outline"
-                  size={12}
-                  color="#7F8B80"
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {item.lecturer}
-                </Text>
-              </View>
+        <View style={styles.cardActions}>
+          <Pressable
+            style={styles.actionBtn}
+            onPress={() => setEditingSubject(item)}
+            hitSlop={6}
+          >
+            <Ionicons name="create-outline" size={16} color={COLORS.goldText} />
+          </Pressable>
+
+          <Pressable
+            style={styles.actionBtn}
+            disabled={deletingId === item.id}
+            onPress={() => handleDeleteSubject(item)}
+            hitSlop={6}
+          >
+            {deletingId === item.id ? (
+              <ActivityIndicator size="small" color={COLORS.danger} />
+            ) : (
+              <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
             )}
-
-            {item.room && (
-              <View style={styles.metaRow}>
-                <Ionicons
-                  name="location-outline"
-                  size={12}
-                  color="#7F8B80"
-                  style={styles.metaIcon}
-                />
-                <Text style={styles.metaText} numberOfLines={1}>
-                  {item.room}
-                </Text>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.cardActions}>
-            <Pressable
-              style={styles.actionButton}
-              onPress={() => setEditingSubject(item)}
-            >
-              <Ionicons name="create-outline" size={16} color="#B8C5B8" />
-            </Pressable>
-
-            <Pressable
-              style={styles.actionButton}
-              disabled={deletingId === item.id}
-              onPress={() => handleDeleteSubject(item)}
-            >
-              {deletingId === item.id ? (
-                <ActivityIndicator size="small" color="#FF8A8A" />
-              ) : (
-                <Ionicons name="trash-outline" size={16} color="#FF8A8A" />
-              )}
-            </Pressable>
-          </View>
+          </Pressable>
         </View>
       </Pressable>
-    </GlassCard>
+    </View>
   );
-
-  if (!workspaceId) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
-          style={StyleSheet.absoluteFill}
-        />
-
-        <View
-          style={[
-            styles.header,
-            {
-              paddingTop: insets.top + 10,
-            },
-          ]}
-        >
-          <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
-          </Pressable>
-          <Text style={styles.title}>Subjects</Text>
-          <View style={styles.spacer} />
-        </View>
-
-        <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={40} color="#FF8A8A" />
-          <Text style={styles.errorText}>Workspace ID tidak ditemukan</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.3, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-          },
-        ]}
-      >
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color="#F5F7F3" />
-        </Pressable>
-        <Text style={styles.title}>Subjects</Text>
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {/* Navigation row: Back + Title + Add Button */}
+        <View style={styles.topRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
 
-        <Pressable
-          style={styles.addButton}
-          onPress={() => {
-            setEditingSubject(null);
-            setShowForm(true);
-          }}
-        >
-          <Ionicons name="add" size={24} color="#F5F7F3" />
-        </Pressable>
+          <Text style={styles.title}>Subjects</Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButtonWrapper,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => {
+              setEditingSubject(null);
+              setShowForm(true);
+            }}
+            hitSlop={8}
+          >
+            <LinearGradient
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="add" size={22} color={COLORS.textDark} />
+            </LinearGradient>
+          </Pressable>
+        </View>
+
+        {isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={COLORS.primaryGold} />
+            <Text style={styles.loadingText}>Memuat mata kuliah...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={subjects}
+            keyExtractor={(item) => item.id}
+            renderItem={renderSubjectCard}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+                tintColor={COLORS.primaryGold}
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="book-outline" size={40} color={COLORS.primaryGold} />
+                <Text style={styles.emptyTitle}>Belum ada mata kuliah</Text>
+                <Text style={styles.emptySubtitle}>
+                  Tambahkan mata kuliah untuk workspace ini.
+                </Text>
+              </View>
+            }
+          />
+        )}
+
+        {/* Modal Form for Add/Edit Subject */}
+        {(showForm || editingSubject) && (
+          <SubjectForm
+            visible={showForm || Boolean(editingSubject)}
+            workspaceId={workspaceId!}
+            subject={editingSubject ?? undefined}
+            onClose={() => {
+              setShowForm(false);
+              setEditingSubject(null);
+            }}
+            onSuccess={() => {
+              setShowForm(false);
+              setEditingSubject(null);
+              refetch();
+            }}
+          />
+        )}
       </View>
 
-      {showForm ? (
-        <SubjectForm
-          workspaceId={workspaceId}
-          initial={editingSubject}
-          onSuccess={() => {
-            setShowForm(false);
-            setEditingSubject(null);
-            refetch();
-          }}
-        />
-      ) : isLoading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#A8D8A8" />
-          <Text style={styles.loadingText}>Memuat subjects...</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={subjects}
-          keyExtractor={(item) => item.id}
-          renderItem={renderSubject}
-          contentContainerStyle={[
-            styles.listContent,
-            {
-              paddingBottom: insets.bottom + 40,
-            },
-          ]}
-          ListEmptyComponent={
-            <View style={styles.emptyState}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="book-outline" size={32} color="#A8D8A8" />
-              </View>
-              <Text style={styles.emptyTitle}>Belum ada subject</Text>
-              <Text style={styles.emptyText}>
-                Buat subject pertama kamu untuk memulai.
-              </Text>
-            </View>
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
-              tintColor="#A8D8A8"
-            />
-          }
-        />
-      )}
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
 
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
-  header: {
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F5F7F3",
-  },
-  spacer: {
-    width: 40,
-  },
-  addButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  loadingContainer: {
+  blackSheet: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 13,
-    color: "#8E998F",
-  },
-  listContent: {
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 120,
-    gap: 12,
+    marginTop: -8,
   },
-  subjectCard: {
-    padding: 16,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  cardContent: {
-    flex: 1,
-    gap: 6,
-    marginRight: 12,
-  },
-  subjectName: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#F5F7F3",
-  },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  metaIcon: {
-    marginTop: 1,
-  },
-  metaText: {
-    fontSize: 11,
-    color: "#7F8B80",
-    flex: 1,
-  },
-  cardActions: {
-    flexDirection: "row",
-    gap: 6,
-  },
-  actionButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.05)",
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
-  },
-  emptyIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(168,216,168,0.08)",
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  emptyTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#F5F7F3",
-    marginBottom: 8,
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
-  emptyText: {
-    fontSize: 12,
-    color: "#8E998F",
-    textAlign: "center",
+  title: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.goldText,
   },
-  errorContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  addButtonWrapper: {
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  addButtonGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  listContent: {
+    paddingBottom: 120,
+    paddingTop: 4,
+  },
+  card: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    marginBottom: 10,
+    overflow: 'hidden',
+  },
+  cardContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
     gap: 12,
   },
-  errorText: {
-    fontSize: 16,
-    color: "#FF8A8A",
-    fontWeight: "600",
+  iconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: COLORS.goldSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  subjectName: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.textLight,
+  },
+  subjectMeta: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  cardActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  actionBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  center: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  emptyContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  emptyTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: COLORS.textLight,
+  },
+  emptySubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
+  },
+  pressed: {
+    opacity: 0.75,
   },
 });

@@ -1,7 +1,10 @@
-import { Ionicons } from "@expo/vector-icons";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from '@expo/vector-icons';
+import React from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import type { WorkspaceMember } from "../types/workspaceMember.types";
+import { COLORS, FONTS } from '@/constants/theme';
+
+import type { WorkspaceMember } from '../types/workspaceMember.types';
 
 type MemberCardProps = {
   member: WorkspaceMember;
@@ -10,7 +13,7 @@ type MemberCardProps = {
 
 export function MemberCard({ member, onRemove }: MemberCardProps) {
   const name =
-    member.profile?.full_name || member.profile?.email || "Unknown User";
+    member.profile?.full_name || member.profile?.email || 'Unknown User';
 
   const initial = name.charAt(0).toUpperCase();
 
@@ -43,7 +46,7 @@ export function MemberCard({ member, onRemove }: MemberCardProps) {
             pressed && styles.pressed,
           ]}
         >
-          <Ionicons name="trash-outline" size={19} color="#FF8A8A" />
+          <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
         </Pressable>
       )}
     </View>
@@ -52,76 +55,69 @@ export function MemberCard({ member, onRemove }: MemberCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 14,
     marginBottom: 10,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 18,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: COLORS.borderCard,
   },
-
   avatar: {
-    width: 46,
-    height: 46,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
+    backgroundColor: COLORS.goldSoft,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorder,
   },
-
   avatarText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#A8D8A8",
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    color: COLORS.goldText,
   },
-
   content: {
     flex: 1,
     marginLeft: 12,
   },
-
   name: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.textLight,
   },
-
   email: {
     marginTop: 2,
+    fontFamily: FONTS.regular,
     fontSize: 12,
-    color: "#8E998F",
+    color: COLORS.textMuted,
   },
-
   roleBadge: {
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
     paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginTop: 5,
-    borderRadius: 7,
-    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    paddingVertical: 2,
+    marginTop: 6,
+    borderRadius: 8,
+    backgroundColor: COLORS.goldSoft,
   },
-
   roleText: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#A8D8A8",
-    textTransform: "uppercase",
+    fontFamily: FONTS.bold,
+    fontSize: 9,
+    color: COLORS.secondaryLightGold,
+    textTransform: 'uppercase',
   },
-
   removeButton: {
-    width: 38,
-    height: 38,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 8,
-    borderRadius: 11,
-    backgroundColor: "rgba(255, 138, 138, 0.12)",
+    borderRadius: 18,
+    backgroundColor: 'rgba(229, 83, 83, 0.1)',
   },
-
   pressed: {
     opacity: 0.6,
   },
 });
-

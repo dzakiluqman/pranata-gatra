@@ -1,13 +1,17 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React from 'react';
 import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
   View,
-} from "react-native";
+} from 'react-native';
 
-import type { Workspace } from "../types/workspace.types";
+import { COLORS, FONTS } from '@/constants/theme';
+
+import type { Workspace } from '../types/workspace.types';
 
 type WorkspaceDetailProps = {
   workspace: Workspace | null;
@@ -33,8 +37,7 @@ export function WorkspaceDetail({
   if (isLoading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="small" color="#DDE5DD" />
-
+        <ActivityIndicator size="small" color={COLORS.primaryGold} />
         <Text style={styles.loadingText}>Memuat workspace...</Text>
       </View>
     );
@@ -43,10 +46,8 @@ export function WorkspaceDetail({
   if (error) {
     return (
       <View style={styles.center}>
-        <Ionicons name="alert-circle-outline" size={42} color="#E57B7B" />
-
+        <Ionicons name="alert-circle-outline" size={42} color={COLORS.danger} />
         <Text style={styles.errorTitle}>Gagal memuat workspace</Text>
-
         <Text style={styles.errorText}>{error.message}</Text>
       </View>
     );
@@ -55,285 +56,299 @@ export function WorkspaceDetail({
   if (!workspace) {
     return (
       <View style={styles.center}>
-        <Ionicons name="folder-open-outline" size={42} color="#89918A" />
-
+        <Ionicons name="folder-open-outline" size={42} color={COLORS.goldText} />
         <Text style={styles.errorTitle}>Workspace tidak ditemukan</Text>
       </View>
     );
   }
 
-  return (
-    <View>
-      <View style={styles.hero}>
-        <View style={styles.heroGlow} />
+  const isCollaborative = workspace.description?.toLowerCase().includes('collaborative');
 
-        <View style={styles.icon}>
-          <Text style={styles.iconText}>
-            {workspace.name.charAt(0).toUpperCase()}
-          </Text>
+  return (
+    <View style={styles.container}>
+      {/* Workspace Header Hero Card */}
+      <View style={styles.heroCard}>
+        <View style={styles.heroTop}>
+          <LinearGradient
+            colors={COLORS.goldGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatarCircle}
+          >
+            <Text style={styles.avatarText}>
+              {workspace.name.charAt(0).toUpperCase()}
+            </Text>
+          </LinearGradient>
+
+          <View style={styles.heroTextContainer}>
+            <Text style={styles.workspaceName}>{workspace.name}</Text>
+            <View style={styles.badgeRow}>
+              <View style={styles.typeBadge}>
+                <Text style={styles.typeBadgeText}>
+                  {isCollaborative ? 'Collaborative' : 'Personal'}
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
 
-        <Text style={styles.name}>{workspace.name}</Text>
-
-        <Text style={styles.description}>
-          {workspace.description || "Tidak ada deskripsi workspace."}
+        <Text style={styles.workspaceDescription}>
+          {workspace.description || 'Tidak ada deskripsi workspace.'}
         </Text>
       </View>
 
-      <View style={styles.navigation}>
+      {/* Navigation Sections */}
+      <View style={styles.navSection}>
+        <Text style={styles.sectionTitle}>Kelola Workspace</Text>
+
+        {/* Tasks */}
         <Pressable
           onPress={onTasks}
           style={({ pressed }) => [
-            styles.navigationCard,
+            styles.navCard,
             pressed && styles.pressed,
           ]}
         >
-          <View style={styles.navigationIcon}>
-            <Ionicons name="checkmark-outline" size={21} color="#DDE5DD" />
+          <View style={styles.navIconBox}>
+            <Ionicons name="checkbox-outline" size={20} color={COLORS.goldText} />
           </View>
-
-          <View style={styles.navigationContent}>
-            <Text style={styles.navigationTitle}>Tasks</Text>
-
-            <Text style={styles.navigationDescription}>
-              Kelola tugas dalam workspace.
-            </Text>
+          <View style={styles.navContent}>
+            <Text style={styles.navTitle}>Tasks</Text>
+            <Text style={styles.navSubtitle}>Kelola semua tugas dalam workspace</Text>
           </View>
-
-          <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
+          <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
         </Pressable>
 
+        {/* Subjects / Mata Kuliah */}
         <Pressable
           onPress={onSubjects}
           style={({ pressed }) => [
-            styles.navigationCard,
+            styles.navCard,
             pressed && styles.pressed,
           ]}
         >
-          <View style={styles.navigationIcon}>
-            <Ionicons name="book-outline" size={20} color="#DDE5DD" />
+          <View style={styles.navIconBox}>
+            <Ionicons name="book-outline" size={20} color={COLORS.goldText} />
           </View>
-
-          <View style={styles.navigationContent}>
-            <Text style={styles.navigationTitle}>Subjects</Text>
-
-            <Text style={styles.navigationDescription}>
-              Kelola subject dan jadwal.
-            </Text>
+          <View style={styles.navContent}>
+            <Text style={styles.navTitle}>Subjects</Text>
+            <Text style={styles.navSubtitle}>Daftar mata kuliah dan jadwal kelas</Text>
           </View>
-
-          <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
+          <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
         </Pressable>
 
+        {/* Members */}
         <Pressable
           onPress={onMembers}
           style={({ pressed }) => [
-            styles.navigationCard,
+            styles.navCard,
             pressed && styles.pressed,
           ]}
         >
-          <View style={styles.navigationIcon}>
-            <Ionicons name="people-outline" size={20} color="#DDE5DD" />
+          <View style={styles.navIconBox}>
+            <Ionicons name="people-outline" size={20} color={COLORS.goldText} />
           </View>
-
-          <View style={styles.navigationContent}>
-            <Text style={styles.navigationTitle}>Members</Text>
-
-            <Text style={styles.navigationDescription}>
-              Kelola member dan invitation workspace.
-            </Text>
+          <View style={styles.navContent}>
+            <Text style={styles.navTitle}>Members</Text>
+            <Text style={styles.navSubtitle}>Anggota tim dan kolaborator</Text>
           </View>
-
-          <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
-        </Pressable>
-
-        <Pressable
-          onPress={onEdit}
-          style={({ pressed }) => [
-            styles.navigationCard,
-            pressed && styles.pressed,
-          ]}
-        >
-          <View style={styles.navigationIcon}>
-            <Ionicons name="create-outline" size={20} color="#DDE5DD" />
-          </View>
-
-          <View style={styles.navigationContent}>
-            <Text style={styles.navigationTitle}>Edit Workspace</Text>
-
-            <Text style={styles.navigationDescription}>
-              Ubah informasi workspace.
-            </Text>
-          </View>
-
-          <Ionicons name="arrow-forward" size={17} color="#A7AEA7" />
+          <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
         </Pressable>
       </View>
 
-      <Pressable
-        onPress={onDelete}
-        style={({ pressed }) => [
-          styles.deleteButton,
-          pressed && styles.pressed,
-        ]}
-      >
-        <Ionicons name="trash-outline" size={18} color="#E57B7B" />
+      {/* Action Buttons: Edit / Delete */}
+      <View style={styles.actionRow}>
+        <Pressable
+          onPress={onEdit}
+          style={({ pressed }) => [
+            styles.editButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons name="create-outline" size={16} color={COLORS.goldText} />
+          <Text style={styles.editButtonText}>Edit</Text>
+        </Pressable>
 
-        <Text style={styles.deleteButtonText}>Hapus Workspace</Text>
-      </Pressable>
+        <Pressable
+          onPress={onDelete}
+          style={({ pressed }) => [
+            styles.deleteButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+          <Text style={styles.deleteButtonText}>Hapus</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 40,
+  container: {
+    width: '100%',
   },
-
+  heroCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    padding: 20,
+    marginBottom: 24,
+  },
+  heroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    marginBottom: 12,
+  },
+  avatarCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontFamily: FONTS.bold,
+    fontSize: 22,
+    color: COLORS.textDark,
+  },
+  heroTextContainer: {
+    flex: 1,
+  },
+  workspaceName: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.textLight,
+  },
+  badgeRow: {
+    flexDirection: 'row',
+    marginTop: 4,
+  },
+  typeBadge: {
+    backgroundColor: COLORS.goldSoft,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  typeBadgeText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 10,
+    color: COLORS.secondaryLightGold,
+  },
+  workspaceDescription: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    lineHeight: 19,
+    color: COLORS.textMuted,
+  },
+  navSection: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: COLORS.goldText,
+    marginBottom: 14,
+  },
+  navCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    padding: 16,
+    marginBottom: 10,
+  },
+  navIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: COLORS.goldSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 14,
+  },
+  navContent: {
+    flex: 1,
+  },
+  navTitle: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 14,
+    color: COLORS.textLight,
+    marginBottom: 2,
+  },
+  navSubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.textMuted,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  editButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorderSubtle,
+  },
+  editButtonText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.goldText,
+  },
+  deleteButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 46,
+    borderRadius: 16,
+    backgroundColor: 'rgba(229, 83, 83, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(229, 83, 83, 0.25)',
+  },
+  deleteButtonText: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.danger,
+  },
+  center: {
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   loadingText: {
     marginTop: 12,
+    fontFamily: FONTS.regular,
     fontSize: 13,
-    color: "#89918A",
+    color: COLORS.textMuted,
   },
-
   errorTitle: {
-    marginTop: 14,
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#F1F4F1",
-    textAlign: "center",
-  },
-
-  errorText: {
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#E57B7B",
-    textAlign: "center",
-  },
-
-  hero: {
-    position: "relative",
-    overflow: "hidden",
-    alignItems: "center",
-    paddingVertical: 30,
-    paddingHorizontal: 20,
-    borderRadius: 26,
-    backgroundColor: "rgba(42, 51, 44, 0.62)",
-    borderWidth: 1,
-    borderColor: "rgba(205, 218, 207, 0.28)",
-  },
-
-  heroGlow: {
-    position: "absolute",
-    top: -60,
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    backgroundColor: "rgba(255,255,255,0.035)",
-  },
-
-  icon: {
-    width: 72,
-    height: 72,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.2)",
-  },
-
-  iconText: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#EAF0EA",
-  },
-
-  name: {
-    marginTop: 16,
-    fontSize: 23,
-    fontWeight: "600",
-    color: "#F3F6F3",
-    textAlign: "center",
-  },
-
-  description: {
-    maxWidth: 300,
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#89918A",
-    textAlign: "center",
-  },
-
-  navigation: {
-    gap: 10,
-    marginTop: 16,
-  },
-
-  navigationCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 74,
-    padding: 15,
-    borderRadius: 21,
-    backgroundColor: "rgba(42, 51, 44, 0.58)",
-    borderWidth: 1,
-    borderColor: "rgba(205,218,207,0.25)",
-  },
-
-  navigationIcon: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 15,
-    backgroundColor: "rgba(255,255,255,0.07)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-
-  navigationContent: {
-    flex: 1,
-    marginLeft: 13,
-  },
-
-  navigationTitle: {
+    marginTop: 12,
+    fontFamily: FONTS.bold,
     fontSize: 15,
-    fontWeight: "600",
-    color: "#F1F4F1",
+    color: COLORS.danger,
   },
-
-  navigationDescription: {
-    marginTop: 3,
-    fontSize: 11,
-    color: "#858D86",
+  errorText: {
+    marginTop: 4,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
   },
-
-  deleteButton: {
-    height: 52,
-    marginTop: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    borderRadius: 18,
-    backgroundColor: "rgba(133, 43, 43, 0.14)",
-    borderWidth: 1,
-    borderColor: "rgba(229,123,123,0.25)",
-  },
-
-  deleteButtonText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#E57B7B",
-  },
-
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
 });

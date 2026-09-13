@@ -1,6 +1,8 @@
-import React, { useRef } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { LinearGradient } from "expo-linear-gradient";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useRef } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
   Alert,
@@ -9,13 +11,13 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+} from 'react-native';
 
-import { otpSchema, type OtpFormValues } from "../schemas/authSchemas";
-import { useAuth } from "../hooks/useAuth";
-import AuthLayoutWrapper from "./AuthLayoutWrapper";
+import { COLORS, FONTS } from '@/constants/theme';
+
+import { useAuth } from '../hooks/useAuth';
+import { type OtpFormValues, otpSchema } from '../schemas/authSchemas';
+import AuthLayoutWrapper from './AuthLayoutWrapper';
 
 interface Props {
   email: string;
@@ -32,7 +34,7 @@ export default function OtpVerificationForm({ email }: Props) {
   } = useForm<OtpFormValues>({
     resolver: zodResolver(otpSchema),
     defaultValues: {
-      token: "",
+      token: '',
     },
   });
 
@@ -43,11 +45,11 @@ export default function OtpVerificationForm({ email }: Props) {
     });
 
     if (error) {
-      Alert.alert("Verifikasi gagal", error.message);
+      Alert.alert('Verifikasi gagal', error.message);
       return;
     }
 
-    router.replace("/");
+    router.replace('/');
   };
 
   const focusInput = () => {
@@ -59,7 +61,8 @@ export default function OtpVerificationForm({ email }: Props) {
       <View style={styles.header}>
         <Text style={styles.title}>Email Verification</Text>
         <Text style={styles.subtitle}>
-          OTP code has sent to <Text style={styles.emailHighlight}>{email || "example@gmail.com"}</Text>
+          OTP code has sent to{' '}
+          <Text style={styles.emailHighlight}>{email || 'example@gmail.com'}</Text>
         </Text>
       </View>
 
@@ -72,7 +75,7 @@ export default function OtpVerificationForm({ email }: Props) {
           render={({ field: { onChange, onBlur, value } }) => (
             <Pressable onPress={focusInput} style={styles.otpBoxesContainer}>
               {[0, 1, 2, 3, 4, 5].map((index) => {
-                const char = value ? value[index] : "";
+                const char = value ? value[index] : '';
                 const isCurrent = (value?.length || 0) === index;
                 return (
                   <View
@@ -82,12 +85,12 @@ export default function OtpVerificationForm({ email }: Props) {
                       isCurrent && styles.otpBoxActive,
                     ]}
                   >
-                    <Text style={styles.otpText}>{char || ""}</Text>
+                    <Text style={styles.otpText}>{char || ''}</Text>
                   </View>
                 );
               })}
 
-              {/* Hidden text input capturing input and paste */}
+              {/* Hidden text input capturing input */}
               <TextInput
                 ref={inputRef}
                 style={styles.hiddenInput}
@@ -98,7 +101,6 @@ export default function OtpVerificationForm({ email }: Props) {
                 onBlur={onBlur}
                 autoFocus
                 textContentType="oneTimeCode"
-                autoComplete="one-time-code"
               />
             </Pressable>
           )}
@@ -118,21 +120,17 @@ export default function OtpVerificationForm({ email }: Props) {
           onPress={handleSubmit(onSubmit)}
         >
           <LinearGradient
-            colors={["#B38D46", "#FFE8B3"]}
+            colors={COLORS.goldGradient}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.gradientButton}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#000000" />
+              <ActivityIndicator color={COLORS.textDark} />
             ) : (
-              <Text style={styles.buttonText}>Verify</Text>
+              <Text style={styles.buttonText}>Verify OTP</Text>
             )}
           </LinearGradient>
-        </Pressable>
-
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.backButtonText}>Change Email or Go Back</Text>
         </Pressable>
       </View>
     </AuthLayoutWrapper>
@@ -144,94 +142,86 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
+    fontFamily: FONTS.bold,
     fontSize: 26,
-    fontWeight: "700",
-    color: "#B38D46",
+    color: COLORS.primaryGold,
     letterSpacing: -0.3,
   },
   subtitle: {
     marginTop: 6,
+    fontFamily: FONTS.regular,
     fontSize: 14,
-    color: "#D0C7B7",
+    color: '#D0C7B7',
+    lineHeight: 20,
   },
   emailHighlight: {
-    color: "#FFE8B3",
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
+    color: COLORS.secondaryLightGold,
   },
   form: {
-    width: "100%",
+    width: '100%',
   },
   label: {
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#FFE8B3",
-    marginBottom: 12,
+    color: COLORS.secondaryLightGold,
+    marginBottom: 10,
   },
   otpBoxesContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-    position: "relative",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    position: 'relative',
   },
   otpBox: {
-    flex: 1,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "#1F1F1F",
+    width: 48,
+    height: 54,
     borderWidth: 1.5,
-    borderColor: "#B38D46",
-    alignItems: "center",
-    justifyContent: "center",
+    borderColor: COLORS.primaryGold,
+    borderRadius: 14,
+    backgroundColor: COLORS.bgInput,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   otpBoxActive: {
-    borderColor: "#FFE8B3",
-    backgroundColor: "#282828",
+    borderColor: COLORS.secondaryLightGold,
+    backgroundColor: '#2A2A2A',
   },
   otpText: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    fontFamily: FONTS.bold,
+    fontSize: 20,
+    color: COLORS.textLight,
   },
   hiddenInput: {
-    ...StyleSheet.absoluteFill,
+    position: 'absolute',
     opacity: 0,
-    fontSize: 1,
+    width: 1,
+    height: 1,
   },
   error: {
     marginTop: 8,
-    color: "#FF6B6B",
+    fontFamily: FONTS.regular,
+    color: COLORS.danger,
     fontSize: 13,
   },
   buttonWrapper: {
-    marginTop: 24,
+    marginTop: 28,
     borderRadius: 26,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   gradientButton: {
     height: 52,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 26,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "#000000",
+    fontFamily: FONTS.bold,
+    color: COLORS.textDark,
     fontSize: 16,
-    fontWeight: "700",
-  },
-  backButton: {
-    marginTop: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-  },
-  backButtonText: {
-    color: "#FFE8B3",
-    fontSize: 14,
-    fontWeight: "500",
   },
   pressed: {
     opacity: 0.85,

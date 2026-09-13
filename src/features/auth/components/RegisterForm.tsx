@@ -1,6 +1,8 @@
-import React from "react";
-import { Controller, useForm } from "react-hook-form";
-import { LinearGradient } from "expo-linear-gradient";
+import { zodResolver } from '@hookform/resolvers/zod';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import {
   ActivityIndicator,
   Alert,
@@ -9,13 +11,13 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { router } from "expo-router";
+} from 'react-native';
 
-import { emailSchema, type EmailFormValues } from "../schemas/authSchemas";
-import { useAuth } from "../hooks/useAuth";
-import AuthLayoutWrapper from "./AuthLayoutWrapper";
+import { COLORS, FONTS } from '@/constants/theme';
+
+import { useAuth } from '../hooks/useAuth';
+import { type EmailFormValues, emailSchema } from '../schemas/authSchemas';
+import AuthLayoutWrapper from './AuthLayoutWrapper';
 
 export default function RegisterForm() {
   const { sendEmailOtp } = useAuth();
@@ -27,7 +29,7 @@ export default function RegisterForm() {
   } = useForm<EmailFormValues>({
     resolver: zodResolver(emailSchema),
     defaultValues: {
-      email: "",
+      email: '',
     },
   });
 
@@ -42,15 +44,15 @@ export default function RegisterForm() {
     );
 
     if (error) {
-      Alert.alert("Registrasi gagal", error.message);
+      Alert.alert('Registrasi gagal', error.message);
       return;
     }
 
     router.push({
-      pathname: "/(auth)/verify-otp",
+      pathname: '/(auth)/verify-otp',
       params: {
         email: values.email,
-        mode: "register",
+        mode: 'register',
       },
     });
   };
@@ -98,13 +100,13 @@ export default function RegisterForm() {
           onPress={handleSubmit(onSubmit)}
         >
           <LinearGradient
-            colors={["#B38D46", "#FFE8B3"]}
+            colors={COLORS.goldGradient}
             start={{ x: 0, y: 0.5 }}
             end={{ x: 1, y: 0.5 }}
             style={styles.gradientButton}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#000000" />
+              <ActivityIndicator color={COLORS.textDark} />
             ) : (
               <Text style={styles.buttonText}>Sign Up</Text>
             )}
@@ -113,10 +115,10 @@ export default function RegisterForm() {
 
         <Pressable
           style={styles.switchAuthButton}
-          onPress={() => router.push("/(auth)/login")}
+          onPress={() => router.push('/(auth)/login')}
         >
           <Text style={styles.switchAuthText}>
-            Already have account?{" "}
+            Already have an account?{' '}
             <Text style={styles.switchAuthHighlight}>Sign In</Text>
           </Text>
         </Pressable>
@@ -130,72 +132,76 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   title: {
+    fontFamily: FONTS.bold,
     fontSize: 26,
-    fontWeight: "700",
-    color: "#B38D46",
+    color: COLORS.primaryGold,
     letterSpacing: -0.3,
   },
   subtitle: {
     marginTop: 6,
+    fontFamily: FONTS.regular,
     fontSize: 14,
-    color: "#D0C7B7",
+    color: '#D0C7B7',
   },
   form: {
-    width: "100%",
+    width: '100%',
   },
   label: {
+    fontFamily: FONTS.semiBold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#FFE8B3",
+    color: COLORS.secondaryLightGold,
     marginBottom: 10,
   },
   input: {
     height: 52,
     borderWidth: 1.5,
-    borderColor: "#B38D46",
+    borderColor: COLORS.primaryGold,
     borderRadius: 26,
     paddingHorizontal: 20,
+    fontFamily: FONTS.regular,
     fontSize: 15,
-    backgroundColor: "#1F1F1F",
-    color: "#FFFFFF",
+    backgroundColor: COLORS.bgInput,
+    color: COLORS.textLight,
   },
   error: {
     marginTop: 6,
-    color: "#FF6B6B",
+    fontFamily: FONTS.regular,
+    color: COLORS.danger,
     fontSize: 13,
   },
   buttonWrapper: {
     marginTop: 24,
     borderRadius: 26,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   gradientButton: {
     height: 52,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 26,
   },
   buttonDisabled: {
     opacity: 0.6,
   },
   buttonText: {
-    color: "#000000",
+    fontFamily: FONTS.bold,
+    color: COLORS.textDark,
     fontSize: 16,
-    fontWeight: "700",
   },
   switchAuthButton: {
     marginTop: 24,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 8,
   },
   switchAuthText: {
+    fontFamily: FONTS.regular,
     fontSize: 14,
-    color: "#BDB39E",
+    color: '#BDB39E',
   },
   switchAuthHighlight: {
-    color: "#FFE8B3",
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
+    color: COLORS.secondaryLightGold,
   },
   pressed: {
     opacity: 0.85,

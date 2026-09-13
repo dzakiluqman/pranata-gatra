@@ -1,7 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -10,13 +9,16 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
 import { useWorkspace } from '@/features/workspace';
-import { WorkspaceForm } from '@/features/workspace/components/WorkspaceForm';
+import {
+  CreateWorkspaceFormData,
+  WorkspaceForm,
+} from '@/features/workspace/components/WorkspaceForm';
 
 export default function WorkspaceSettingsScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const { workspaceId } = useLocalSearchParams<{
@@ -32,16 +34,17 @@ export default function WorkspaceSettingsScreen() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (values: {
-    name: string;
-    description?: string;
-  }) => {
+  const handleSubmit = async (values: CreateWorkspaceFormData) => {
     try {
       setIsSubmitting(true);
 
       await editWorkspace({
         name: values.name,
-        description: values.description ?? null,
+        description: values.description
+          ? `${values.description} • ${values.type === 'collaborative' ? 'Collaborative Workspace' : 'Personal Workspace'}`
+          : values.type === 'collaborative'
+            ? 'Collaborative Workspace'
+            : 'Personal Workspace',
       });
 
       router.back();
@@ -50,90 +53,64 @@ export default function WorkspaceSettingsScreen() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#A8D8A8" />
-        </View>
-      </View>
-    );
-  }
-
-  if (error || !workspace) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.center}>
-          <Text style={styles.error}>
-            {error?.message ?? 'Workspace tidak ditemukan.'}
-          </Text>
-        </View>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.25, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-          },
-        ]}
-      >
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => router.back()}
-        >
-          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Pengaturan Workspace</Text>
-        <View style={styles.spacer} />
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={COLORS.primaryGold} />
+            <Text style={styles.loadingText}>Memuat pengaturan...</Text>
+          </View>
+        ) : error || !workspace ? (
+          <View style={styles.center}>
+            <Ionicons name="alert-circle-outline" size={40} color={COLORS.danger} />
+            <Text style={styles.errorTitle}>Gagal memuat workspace</Text>
+          </View>
+        ) : (
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Back chevron */}
+            <Pressable
+              style={({ pressed }) => [
+                styles.backButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={() => router.back()}
+              hitSlop={10}
+            >
+              <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+            </Pressable>
+
+            <Text style={styles.title}>Edit Workspace</Text>
+            <Text style={styles.subtitle}>
+              Perbarui rincian dan informasi workspace Anda.
+            </Text>
+
+            <WorkspaceForm
+              initialValues={{
+                name: workspace.name,
+                description: workspace.description || '',
+                type: workspace.description?.toLowerCase().includes('collaborative')
+                  ? 'collaborative'
+                  : 'personal',
+              }}
+              submitLabel="Simpan Perubahan"
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+            />
+          </ScrollView>
+        )}
       </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingBottom: insets.bottom + 40,
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.eyebrow}>SETTINGS</Text>
-        <Text style={styles.title}>Ubah Workspace</Text>
-        <Text style={styles.subtitle}>
-          Ubah informasi dan deskripsi workspace kamu.
-        </Text>
-
-        <WorkspaceForm
-          initialValues={{
-            name: workspace.name,
-            description: workspace.description ?? '',
-          }}
-          submitLabel="Simpan Perubahan"
-          isSubmitting={isSubmitting}
-          onSubmit={handleSubmit}
-        />
-      </ScrollView>
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
@@ -141,66 +118,58 @@ export default function WorkspaceSettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#060A08',
+    backgroundColor: COLORS.bgBlack,
   },
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    paddingTop: 16,
+    marginTop: -8,
+  },
+  scrollContent: {
+    paddingBottom: 120,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F5F7F3',
-  },
-  spacer: {
-    width: 40,
-  },
-  content: {
-    padding: 20,
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    color: '#8DB88D',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#F5F7F3',
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.goldText,
+    marginBottom: 4,
   },
   subtitle: {
-    marginTop: 6,
-    marginBottom: 24,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#8E998F',
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginBottom: 20,
   },
   center: {
-    flex: 1,
+    paddingVertical: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
   },
-  error: {
-    textAlign: 'center',
-    color: '#FF8A8A',
+  loadingText: {
+    marginTop: 12,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
+  },
+  errorTitle: {
+    marginTop: 10,
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.danger,
   },
   pressed: {
     opacity: 0.7,
   },
-});
+});

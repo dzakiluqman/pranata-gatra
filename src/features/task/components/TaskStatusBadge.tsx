@@ -1,5 +1,9 @@
-import { StyleSheet, Text, View } from "react-native";
-import type { TaskStatus } from "../types/task.types";
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+
+import { FONTS } from '@/constants/theme';
+
+import type { TaskStatus } from '../types/task.types';
 
 interface TaskStatusBadgeProps {
   status: TaskStatus;
@@ -15,28 +19,27 @@ const STATUS_CONFIG: Record<
   }
 > = {
   pending: {
-    label: "Pending",
-    background: "rgba(245, 158, 11, 0.15)",
-    text: "#FBBF24",
+    label: 'Pending',
+    background: 'rgba(245, 158, 11, 0.15)',
+    text: '#FBBF24',
   },
   in_progress: {
-    label: "In Progress",
-    background: "rgba(168, 216, 168, 0.15)",
-    text: "#A8D8A8",
+    label: 'In Progress',
+    background: 'rgba(179, 141, 70, 0.2)',
+    text: '#FFE8B3',
   },
   completed: {
-    label: "Completed",
-    background: "rgba(74, 222, 128, 0.15)",
-    text: "#4ADE80",
+    label: 'Completed',
+    background: 'rgba(74, 222, 128, 0.15)',
+    text: '#4ADE80',
   },
 };
-
 
 export function TaskStatusBadge({
   status,
   compact = false,
 }: TaskStatusBadgeProps) {
-  const config = STATUS_CONFIG[status];
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
 
   return (
     <View
@@ -74,18 +77,18 @@ export function TaskStatusBadge({
 
 const styles = StyleSheet.create({
   container: {
-    alignSelf: "flex-start",
-    flexDirection: "row",
-    alignItems: "center",
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  compact: {
     paddingHorizontal: 8,
     paddingVertical: 4,
-    gap: 5,
+    borderRadius: 12,
+  },
+  compact: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    gap: 4,
   },
   dot: {
     width: 6,
@@ -93,10 +96,10 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   text: {
-    fontSize: 12,
-    fontWeight: "600",
+    fontFamily: FONTS.medium,
+    fontSize: 11,
   },
   compactText: {
-    fontSize: 11,
+    fontSize: 10,
   },
 });

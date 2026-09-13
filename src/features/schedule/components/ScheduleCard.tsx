@@ -1,6 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -8,10 +8,13 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { scheduleService } from "../services/scheduleService";
-import type { Schedule } from "../types/schedule.types";
-import { formatRecurrence } from "../utils/recurrence";
+} from 'react-native';
+
+import { COLORS, FONTS } from '@/constants/theme';
+
+import { scheduleService } from '../services/scheduleService';
+import type { Schedule } from '../types/schedule.types';
+import { formatRecurrence } from '../utils/recurrence';
 
 interface Props {
   schedule: Schedule;
@@ -38,19 +41,19 @@ export default function ScheduleCard({
     if (deleteInProgressRef.current || isDeleting) return;
 
     Alert.alert(
-      "Hapus schedule?",
-      "Schedule ini akan dihapus secara permanen.",
+      'Hapus schedule?',
+      'Schedule ini akan dihapus secara permanen.',
       [
         {
-          text: "Batal",
-          style: "cancel",
+          text: 'Batal',
+          style: 'cancel',
           onPress: () => {
             deleteInProgressRef.current = false;
           },
         },
         {
-          text: "Hapus",
-          style: "destructive",
+          text: 'Hapus',
+          style: 'destructive',
           onPress: async () => {
             if (deleteInProgressRef.current || isDeleting) return;
 
@@ -62,31 +65,31 @@ export default function ScheduleCard({
 
               if (workspaceId) {
                 queryClient.invalidateQueries({
-                  queryKey: ["schedules", "workspace", workspaceId],
+                  queryKey: ['schedules', 'workspace', workspaceId],
                 });
               }
 
               if (subjectId) {
                 queryClient.invalidateQueries({
-                  queryKey: ["schedules", "subject", subjectId],
+                  queryKey: ['schedules', 'subject', subjectId],
                 });
               }
 
               queryClient.invalidateQueries({
-                queryKey: ["schedules", "today"],
+                queryKey: ['schedules', 'today'],
               });
 
               queryClient.invalidateQueries({
-                queryKey: ["schedules"],
+                queryKey: ['schedules'],
               });
 
               onDeleteSuccess?.();
             } catch (error) {
               Alert.alert(
-                "Gagal menghapus",
+                'Gagal menghapus',
                 error instanceof Error
                   ? error.message
-                  : "Schedule tidak dapat dihapus.",
+                  : 'Schedule tidak dapat dihapus.',
               );
               deleteInProgressRef.current = false;
               setIsDeleting(false);
@@ -110,34 +113,30 @@ export default function ScheduleCard({
       >
         <View style={styles.timeColumn}>
           <Text style={styles.startTime}>{schedule.startTime.slice(0, 5)}</Text>
-
           <View style={styles.line} />
-
           <Text style={styles.endTime}>{schedule.endTime.slice(0, 5)}</Text>
         </View>
 
         <View style={styles.content}>
           <Text style={styles.subjectName} numberOfLines={1}>
-            {schedule.subject?.name ?? "Subject"}
+            {schedule.subject?.name ?? 'Subject'}
           </Text>
 
           {schedule.subject?.room && (
             <View style={styles.meta}>
-              <Ionicons name="location-outline" size={14} color="#9CA39B" />
-
+              <Ionicons name="location-outline" size={13} color={COLORS.goldText} />
               <Text style={styles.metaText}>{schedule.subject.room}</Text>
             </View>
           )}
 
           <View style={styles.meta}>
-            <Ionicons name="repeat-outline" size={14} color="#9CA39B" />
-
+            <Ionicons name="repeat-outline" size={13} color={COLORS.textMuted} />
             <Text style={styles.metaText}>{formatRecurrence(schedule)}</Text>
           </View>
         </View>
 
         {!showDeleteButton && (
-          <Ionicons name="chevron-forward" size={18} color="#666D66" />
+          <Ionicons name="chevron-forward" size={18} color="#8E8E93" />
         )}
       </Pressable>
 
@@ -152,9 +151,9 @@ export default function ScheduleCard({
           onPress={handleDelete}
         >
           {isDeleting ? (
-            <ActivityIndicator size="small" color="#FF8A8A" />
+            <ActivityIndicator size="small" color={COLORS.danger} />
           ) : (
-            <Ionicons name="trash-outline" size={18} color="#FF8A8A" />
+            <Ionicons name="trash-outline" size={18} color={COLORS.danger} />
           )}
         </Pressable>
       )}
@@ -164,21 +163,21 @@ export default function ScheduleCard({
 
 const styles = StyleSheet.create({
   wrapper: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 10,
   },
   container: {
     flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 96,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 90,
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderRadius: 18,
-    backgroundColor: "#151A15",
+    borderRadius: 20,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: COLORS.borderCard,
   },
   pressed: {
     opacity: 0.7,
@@ -187,23 +186,24 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   timeColumn: {
-    width: 64,
-    alignItems: "center",
+    width: 60,
+    alignItems: 'center',
   },
   startTime: {
-    color: "#F5F7F3",
-    fontSize: 15,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
+    color: COLORS.textLight,
+    fontSize: 14,
   },
   endTime: {
-    color: "#777E77",
+    fontFamily: FONTS.regular,
+    color: COLORS.textMuted,
     fontSize: 12,
   },
   line: {
     width: 1,
-    height: 14,
+    height: 12,
     marginVertical: 4,
-    backgroundColor: "#3A423A",
+    backgroundColor: COLORS.borderSubtle,
   },
   content: {
     flex: 1,
@@ -211,32 +211,33 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   subjectName: {
-    color: "#F5F7F3",
-    fontSize: 15,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
+    color: COLORS.textLight,
+    fontSize: 14,
   },
   meta: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   metaText: {
+    fontFamily: FONTS.regular,
     marginLeft: 5,
-    color: "#9CA39B",
+    color: COLORS.textMuted,
     fontSize: 12,
   },
   deleteButton: {
-    width: 48,
-    height: 96,
-    alignItems: "center",
-    justifyContent: "center",
+    width: 46,
+    height: 90,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 18,
-    backgroundColor: "rgba(255, 138, 138, 0.08)",
+    backgroundColor: 'rgba(229, 83, 83, 0.1)',
     borderWidth: 1,
-    borderColor: "rgba(255, 138, 138, 0.15)",
+    borderColor: 'rgba(229, 83, 83, 0.25)',
   },
   deletePressed: {
-    backgroundColor: "rgba(255, 138, 138, 0.15)",
+    backgroundColor: 'rgba(229, 83, 83, 0.2)',
   },
   deleteDisabled: {
     opacity: 0.6,

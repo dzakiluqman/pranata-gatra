@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,23 +11,23 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
 
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
 import {
   TaskCard,
   TaskFilter,
   type TaskFilters,
   useTasks,
   useUpdateTaskStatus,
-} from "@/features/task";
+} from '@/features/task';
 
 export default function TasksScreen() {
-  const insets = useSafeAreaInsets();
   const [filters, setFilters] = useState<TaskFilters>({
-    status: "all",
-    deadline: "all",
-    search: "",
+    status: 'all',
+    deadline: 'all',
+    search: '',
   });
 
   const tasksQuery = useTasks(filters);
@@ -53,7 +53,7 @@ export default function TasksScreen() {
 
   const handleStatusChange = async (
     taskId: string,
-    status: "pending" | "in_progress" | "completed",
+    status: 'pending' | 'in_progress' | 'completed',
   ) => {
     await updateStatusMutation.mutateAsync({
       taskId,
@@ -63,36 +63,27 @@ export default function TasksScreen() {
 
   const handleTaskPress = (taskId: string) => {
     router.push({
-      pathname: "/task/[taskId]",
+      pathname: '/(app)/task/[taskId]',
       params: {
         taskId,
       },
-    });
+    } as any);
   };
 
   const handleCreateTask = () => {
-    router.push("/task/create");
+    router.push('/(app)/task/create' as any);
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.25, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.contentWrapper,
-          {
-            paddingTop: insets.top + 14,
-          },
-        ]}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerText}>
-            <Text style={styles.eyebrow}>MANAGEMENT</Text>
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {/* Title and Add Button */}
+        <View style={styles.titleRow}>
+          <View>
             <Text style={styles.title}>Tasks</Text>
             <Text style={styles.subtitle}>
               Kelola semua tugas kamu dalam satu tempat
@@ -101,20 +92,28 @@ export default function TasksScreen() {
 
           <Pressable
             style={({ pressed }) => [
-              styles.addButton,
+              styles.addButtonWrapper,
               pressed && styles.pressed,
             ]}
             onPress={handleCreateTask}
+            hitSlop={8}
           >
-            <Ionicons name="add" size={24} color="#0A0E0A" />
+            <LinearGradient
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="add" size={22} color={COLORS.textDark} />
+            </LinearGradient>
           </Pressable>
         </View>
 
+        {/* Search Input */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={19} color="#8E998F" />
-
+          <Ionicons name="search-outline" size={18} color={COLORS.goldText} />
           <TextInput
-            value={filters.search ?? ""}
+            value={filters.search ?? ''}
             onChangeText={(search) =>
               setFilters((current) => ({
                 ...current,
@@ -122,63 +121,37 @@ export default function TasksScreen() {
               }))
             }
             placeholder="Cari tugas..."
-            placeholderTextColor="#8E998F"
+            placeholderTextColor="#666666"
             style={styles.searchInput}
             returnKeyType="search"
           />
-
           {!!filters.search && (
             <Pressable
               onPress={() =>
                 setFilters((current) => ({
                   ...current,
-                  search: "",
+                  search: '',
                 }))
               }
             >
-              <Ionicons name="close-circle" size={18} color="#8E998F" />
+              <Ionicons name="close-circle" size={18} color="#8E8E93" />
             </Pressable>
           )}
         </View>
 
+        {/* Filters */}
         <TaskFilter filters={filters} onChange={setFilters} />
 
-        <View style={styles.resultHeader}>
-          <Text style={styles.resultTitle}>{filteredTasks.length} tugas</Text>
-
-          {filters.status !== "all" && (
-            <Pressable
-              onPress={() =>
-                setFilters((current) => ({
-                  ...current,
-                  status: "all",
-                }))
-              }
-            >
-              <Text style={styles.clearFilter}>Reset</Text>
-            </Pressable>
-          )}
-        </View>
-
+        {/* Task List */}
         {tasksQuery.isLoading ? (
           <View style={styles.center}>
-            <ActivityIndicator size="large" color="#A8D8A8" />
+            <ActivityIndicator size="large" color={COLORS.primaryGold} />
             <Text style={styles.loadingText}>Memuat tugas...</Text>
           </View>
         ) : tasksQuery.error ? (
           <View style={styles.center}>
-            <View style={styles.errorIcon}>
-              <Ionicons name="alert-circle-outline" size={32} color="#FF8A8A" />
-            </View>
-
+            <Ionicons name="alert-circle-outline" size={36} color={COLORS.danger} />
             <Text style={styles.errorTitle}>Gagal memuat tugas</Text>
-
-            <Text style={styles.errorMessage}>
-              {tasksQuery.error instanceof Error
-                ? tasksQuery.error.message
-                : "Terjadi kesalahan saat mengambil data tugas."}
-            </Text>
-
             <Pressable
               style={styles.retryButton}
               onPress={() => tasksQuery.refetch()}
@@ -191,19 +164,12 @@ export default function TasksScreen() {
             data={filteredTasks}
             keyExtractor={(item) => item.id}
             showsVerticalScrollIndicator={false}
-            ItemSeparatorComponent={() => <View style={styles.separator} />}
-            contentContainerStyle={[
-              styles.listContent,
-              {
-                paddingBottom: insets.bottom + 120,
-              },
-              filteredTasks.length === 0 && styles.emptyList,
-            ]}
+            contentContainerStyle={styles.listContent}
             refreshControl={
               <RefreshControl
                 refreshing={tasksQuery.isRefetching}
                 onRefresh={() => tasksQuery.refetch()}
-                tintColor="#A8D8A8"
+                tintColor={COLORS.primaryGold}
               />
             }
             renderItem={({ item }) => (
@@ -213,34 +179,22 @@ export default function TasksScreen() {
                 onStatusChange={() =>
                   handleStatusChange(
                     item.id,
-                    item.status === "completed" ? "pending" : "completed",
+                    item.status === 'completed' ? 'pending' : 'completed',
                   )
                 }
               />
             )}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <View style={styles.emptyIcon}>
-                  <Ionicons
-                    name="checkmark-done-outline"
-                    size={38}
-                    color="#A8D8A8"
-                  />
-                </View>
-
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={42}
+                  color={COLORS.primaryGold}
+                />
                 <Text style={styles.emptyTitle}>Belum ada tugas</Text>
-
-                <Text style={styles.emptyMessage}>
+                <Text style={styles.emptySubtitle}>
                   Buat tugas baru untuk mulai mengatur pekerjaanmu.
                 </Text>
-
-                <Pressable
-                  style={styles.emptyButton}
-                  onPress={handleCreateTask}
-                >
-                  <Ionicons name="add" size={18} color="#0A0E0A" />
-                  <Text style={styles.emptyButtonText}>Buat Tugas</Text>
-                </Pressable>
               </View>
             }
           />
@@ -253,177 +207,116 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
-  contentWrapper: {
+  blackSheet: {
     flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
+    paddingTop: 20,
+    marginTop: -8,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  headerText: {
-    flex: 1,
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    color: "#8DB88D",
-    marginBottom: 4,
-  },
   title: {
-    fontSize: 30,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.goldText,
   },
   subtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#8E998F",
+    marginTop: 2,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#A8D8A8",
+  addButtonWrapper: {
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  addButtonGradient: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
-    height: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    marginBottom: 14,
+    borderColor: COLORS.goldBorder,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
+    marginBottom: 4,
   },
   searchInput: {
     flex: 1,
-    marginHorizontal: 10,
-    fontSize: 15,
-    color: "#F5F7F3",
-  },
-  resultHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 14,
-    marginBottom: 10,
-  },
-  resultTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#DCE3DC",
-  },
-  clearFilter: {
+    fontFamily: FONTS.regular,
     fontSize: 13,
-    fontWeight: "700",
-    color: "#A8D8A8",
-  },
-  separator: {
-    height: 10,
+    color: COLORS.textLight,
   },
   listContent: {
-    paddingTop: 4,
-  },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: "center",
+    paddingBottom: 120,
+    paddingTop: 8,
   },
   center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
-    color: "#8E998F",
-  },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 138, 138, 0.12)",
-    marginBottom: 16,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   errorTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#F5F7F3",
-  },
-  errorMessage: {
-    marginTop: 7,
+    marginTop: 10,
+    fontFamily: FONTS.bold,
     fontSize: 14,
-    lineHeight: 21,
-    color: "#8E998F",
-    textAlign: "center",
+    color: COLORS.danger,
   },
   retryButton: {
-    marginTop: 20,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
+    marginTop: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
     borderRadius: 12,
-    backgroundColor: "#A8D8A8",
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorder,
   },
   retryText: {
-    color: "#0A0E0A",
-    fontSize: 14,
-    fontWeight: "700",
+    fontFamily: FONTS.semiBold,
+    fontSize: 12,
+    color: COLORS.goldText,
   },
   emptyContainer: {
-    alignItems: "center",
-    paddingHorizontal: 30,
-    paddingVertical: 40,
-  },
-  emptyIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
-    marginBottom: 16,
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
   emptyTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: COLORS.textLight,
   },
-  emptyMessage: {
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: "center",
-    color: "#8E998F",
-  },
-  emptyButton: {
-    marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#A8D8A8",
-  },
-  emptyButtonText: {
-    color: "#0A0E0A",
-    fontSize: 14,
-    fontWeight: "700",
+  emptySubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
   },
   pressed: {
-    opacity: 0.75,
+    opacity: 0.8,
   },
 });
-

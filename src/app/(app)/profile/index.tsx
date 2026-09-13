@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router } from "expo-router";
-import { useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -10,52 +10,51 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
 
-import GlassCard from "../../../components/ui/GlassCard";
-import { useSession } from "../../../features/auth/hooks/useSession";
-import { signOut } from "../../../features/auth/services/authService";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
+import { useSession } from '@/features/auth/hooks/useSession';
+import { signOut } from '@/features/auth/services/authService';
 
 export default function ProfileScreen() {
-  const insets = useSafeAreaInsets();
   const { user } = useSession();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fullName =
     (user?.user_metadata?.full_name ||
       user?.user_metadata?.name ||
-      user?.email?.split("@")[0] ||
-      "User") as string;
-  const email = user?.email || "-";
+      user?.email?.split('@')[0] ||
+      'User') as string;
+  const email = user?.email || '-';
   const createdAt = user?.created_at
-    ? new Date(user.created_at).toLocaleDateString("id-ID", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+    ? new Date(user.created_at).toLocaleDateString('id-ID', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       })
-    : "-";
+    : '-';
 
   const handleLogout = () => {
-    Alert.alert("Konfirmasi Keluar", "Apakah kamu yakin ingin keluar dari akun?", [
+    Alert.alert('Konfirmasi Keluar', 'Apakah kamu yakin ingin keluar dari akun?', [
       {
-        text: "Batal",
-        style: "cancel",
+        text: 'Batal',
+        style: 'cancel',
       },
       {
-        text: "Keluar",
-        style: "destructive",
+        text: 'Keluar',
+        style: 'destructive',
         onPress: async () => {
           try {
             setIsLoggingOut(true);
             const { error } = await signOut();
             if (error) {
-              Alert.alert("Gagal keluar", error.message);
+              Alert.alert('Gagal keluar', error.message);
             }
           } catch (err) {
             Alert.alert(
-              "Gagal keluar",
-              err instanceof Error ? err.message : "Terjadi kesalahan.",
+              'Gagal keluar',
+              err instanceof Error ? err.message : 'Terjadi kesalahan.',
             );
           } finally {
             setIsLoggingOut(false);
@@ -66,269 +65,231 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={[styles.safeArea, { paddingTop: insets.top }]}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
-        locations={[0, 0.3, 0.55, 0.8, 1]}
-        start={{ x: -0.5, y: 0 }}
-        end={{ x: 1.5, y: 1 }}
-        style={StyleSheet.absoluteFill}
-      />
+    <View style={styles.container}>
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View style={styles.header}>
-        <Pressable
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-          onPress={() => router.back()}
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
-          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Profil Saya</Text>
-        <View style={styles.headerRightSpacer} />
-      </View>
+          {/* Back chevron */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.scrollContent,
-          { paddingBottom: Math.max(insets.bottom, 24) + 40 },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.profileHero}>
-          <View style={styles.avatarContainer}>
+          {/* Profile Hero */}
+          <View style={styles.heroCard}>
             <LinearGradient
-              colors={["#55466E", "#342845"]}
-              style={styles.avatarGradient}
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.avatarCircle}
             >
-              <Ionicons name="person" size={44} color="#E6ECE6" />
+              <Ionicons name="person" size={36} color={COLORS.textDark} />
             </LinearGradient>
-          </View>
-          <Text style={styles.profileName}>{fullName}</Text>
-          <Text style={styles.profileEmail}>{email}</Text>
-        </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informasi Akun</Text>
-          <GlassCard style={styles.card}>
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconWrapper}>
-                <Ionicons name="person-outline" size={18} color="#A8D8A8" />
-              </View>
-              <View style={styles.infoTextWrapper}>
-                <Text style={styles.infoLabel}>Nama Lengkap</Text>
+            <Text style={styles.userName}>{fullName}</Text>
+            <Text style={styles.userEmail}>{email}</Text>
+
+            <View style={styles.memberBadge}>
+              <Text style={styles.memberBadgeText}>Member sejak {createdAt}</Text>
+            </View>
+          </View>
+
+          {/* Account Details */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Detail Akun</Text>
+
+            <View style={styles.infoCard}>
+              <View style={styles.infoRow}>
+                <View style={styles.infoLeft}>
+                  <Ionicons name="person-outline" size={18} color={COLORS.goldText} />
+                  <Text style={styles.infoLabel}>Nama Lengkap</Text>
+                </View>
                 <Text style={styles.infoValue}>{fullName}</Text>
               </View>
-            </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconWrapper}>
-                <Ionicons name="mail-outline" size={18} color="#A8D8A8" />
-              </View>
-              <View style={styles.infoTextWrapper}>
-                <Text style={styles.infoLabel}>Email</Text>
+              <View style={styles.infoRow}>
+                <View style={styles.infoLeft}>
+                  <Ionicons name="mail-outline" size={18} color={COLORS.goldText} />
+                  <Text style={styles.infoLabel}>Email</Text>
+                </View>
                 <Text style={styles.infoValue}>{email}</Text>
               </View>
-            </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <View style={styles.infoIconWrapper}>
-                <Ionicons name="calendar-outline" size={18} color="#A8D8A8" />
-              </View>
-              <View style={styles.infoTextWrapper}>
-                <Text style={styles.infoLabel}>Terdaftar Sejak</Text>
+              <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                <View style={styles.infoLeft}>
+                  <Ionicons name="calendar-outline" size={18} color={COLORS.goldText} />
+                  <Text style={styles.infoLabel}>Terdaftar</Text>
+                </View>
                 <Text style={styles.infoValue}>{createdAt}</Text>
               </View>
             </View>
-          </GlassCard>
-        </View>
+          </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Aksi Akun</Text>
-          <GlassCard style={styles.card}>
-            <Pressable
-              style={({ pressed }) => [styles.menuAction, pressed && styles.pressed]}
-              onPress={() => router.push("/(app)/(tabs)/notifications")}
-            >
-              <View style={styles.actionLeft}>
-                <View style={styles.actionIconWrapper}>
-                  <Ionicons name="notifications-outline" size={18} color="#A8D8A8" />
-                </View>
-                <Text style={styles.actionText}>Notifikasi & Undangan</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color="#7E8980" />
-            </Pressable>
+          {/* Logout Button */}
+          <Pressable
+            onPress={handleLogout}
+            disabled={isLoggingOut}
+            style={({ pressed }) => [
+              styles.logoutButton,
+              pressed && styles.pressed,
+              isLoggingOut && styles.disabled,
+            ]}
+          >
+            {isLoggingOut ? (
+              <ActivityIndicator color={COLORS.danger} />
+            ) : (
+              <>
+                <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
+                <Text style={styles.logoutButtonText}>Keluar dari Akun</Text>
+              </>
+            )}
+          </Pressable>
+        </ScrollView>
+      </View>
 
-            <View style={styles.divider} />
-
-            <Pressable
-              style={({ pressed }) => [styles.menuAction, pressed && styles.pressed]}
-              onPress={handleLogout}
-              disabled={isLoggingOut}
-            >
-              <View style={styles.actionLeft}>
-                <View style={[styles.actionIconWrapper, styles.logoutIconBg]}>
-                  {isLoggingOut ? (
-                    <ActivityIndicator size="small" color="#FF8A8A" />
-                  ) : (
-                    <Ionicons name="log-out-outline" size={18} color="#FF8A8A" />
-                  )}
-                </View>
-                <Text style={[styles.actionText, styles.logoutText]}>
-                  {isLoggingOut ? "Sedang keluar..." : "Keluar dari Akun"}
-                </Text>
-              </View>
-              {!isLoggingOut && (
-                <Ionicons name="chevron-forward" size={18} color="#7E8980" />
-              )}
-            </Pressable>
-          </GlassCard>
-        </View>
-      </ScrollView>
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="home" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
-  header: {
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F5F7F3",
-  },
-  headerRightSpacer: {
-    width: 40,
+    paddingTop: 16,
+    marginTop: -8,
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 60,
+    paddingBottom: 120,
   },
-  profileHero: {
-    alignItems: "center",
-    marginBottom: 32,
+  backButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    marginBottom: 8,
   },
-  avatarContainer: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "rgba(255, 255, 255, 0.2)",
-    marginBottom: 16,
+  heroCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 24,
   },
-  avatarGradient: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+  avatarCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
   },
-  profileName: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#F5F7F3",
+  userName: {
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.textLight,
     marginBottom: 4,
   },
-  profileEmail: {
-    fontSize: 14,
-    color: "#8E998F",
+  userEmail: {
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginBottom: 12,
+  },
+  memberBadge: {
+    backgroundColor: COLORS.goldSoft,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 14,
+  },
+  memberBadgeText: {
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    color: COLORS.secondaryLightGold,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
+    fontFamily: FONTS.bold,
     fontSize: 15,
-    fontWeight: "700",
-    color: "#DCE3DC",
+    color: COLORS.goldText,
     marginBottom: 12,
   },
-  card: {
-    paddingVertical: 4,
-    paddingHorizontal: 16,
+  infoCard: {
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    paddingHorizontal: 18,
   },
   infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
-  infoIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(168, 216, 168, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
-  },
-  infoTextWrapper: {
-    flex: 1,
+  infoLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   infoLabel: {
-    fontSize: 11,
-    color: "#7E8980",
-    marginBottom: 2,
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
   infoValue: {
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.textLight,
+  },
+  logoutButton: {
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(229, 83, 83, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(229, 83, 83, 0.25)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 8,
+  },
+  logoutButtonText: {
+    fontFamily: FONTS.bold,
     fontSize: 14,
-    fontWeight: "600",
-    color: "#F5F7F3",
+    color: COLORS.danger,
   },
-  divider: {
-    height: 1,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  menuAction: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-  },
-  actionLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "rgba(168, 216, 168, 0.1)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 14,
-  },
-  logoutIconBg: {
-    backgroundColor: "rgba(255, 138, 138, 0.1)",
-  },
-  actionText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#F5F7F3",
-  },
-  logoutText: {
-    color: "#FF8A8A",
+  disabled: {
+    opacity: 0.6,
   },
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
 });

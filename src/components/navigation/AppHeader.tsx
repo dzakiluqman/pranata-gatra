@@ -1,6 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -8,45 +9,77 @@ import {
   StyleSheet,
   Text,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useSession } from "@/features/auth/hooks/useSession";
-import { signOut } from "@/features/auth/services/authService";
+import { COLORS, FONTS } from '@/constants/theme';
+import { useSession } from '@/features/auth/hooks/useSession';
+import { signOut } from '@/features/auth/services/authService';
+import { supabase } from '@/lib/supabase/client';
 
-export default function AppHeader() {
+import AppBottomBar, { TabKey } from './AppBottomBar';
+import NotificationModal from './NotificationModal';
+
+type AppHeaderProps = {
+  headerBottomContent?: React.ReactNode;
+  showBottomBar?: boolean;
+  activeTab?: TabKey;
+};
+
+export default function AppHeader({
+  headerBottomContent,
+  showBottomBar = false,
+  activeTab,
+}: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useSession();
 
   const [menuVisible, setMenuVisible] = useState(false);
+  const [notificationVisible, setNotificationVisible] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fullName =
     (user?.user_metadata?.full_name ||
       user?.user_metadata?.name ||
-      user?.email?.split("@")[0] ||
-      "User") as string;
-  const firstName = fullName.split(" ")[0] || "User";
+      user?.email?.split('@')[0] ||
+      'User') as string;
+  const firstName = fullName.split(' ')[0] || 'User';
+
+  // Check pending invitations for badge
+  useEffect(() => {
+    async function checkNotifications() {
+      if (!user?.email) return;
+      try {
+        const { count, error } = await supabase
+          .from('workspace_invitations')
+          .select('*', { count: 'exact', head: true })
+          .eq('invitee_email', user.email)
+          .eq('status', 'pending');
+
+        if (!error && typeof count === 'number') {
+          setUnreadCount(count);
+        }
+      } catch {
+        // silent fallback
+      }
+    }
+    checkNotifications();
+  }, [user]);
 
   const handleLogout = async () => {
-    if (isLoggingOut) {
-      return;
-    }
-
+    if (isLoggingOut) return;
     try {
       setIsLoggingOut(true);
-
       const { error } = await signOut();
-
       if (error) {
-        console.error("Logout failed:", error);
+        console.error('Logout failed:', error);
         return;
       }
-
       setMenuVisible(false);
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Logout failed:', error);
     } finally {
       setIsLoggingOut(false);
     }
@@ -54,38 +87,38 @@ export default function AppHeader() {
 
   const handleProfile = () => {
     setMenuVisible(false);
-    router.push("/(app)/profile");
-  };
-
-  const handleNotifications = () => {
-    router.push("/(app)/(tabs)/notifications");
+    router.push('/(app)/profile');
   };
 
   return (
     <>
-      <View
+      <LinearGradient
+        colors={COLORS.goldHeaderGradient}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={[
           styles.container,
           {
-            paddingTop: insets.top + 12,
+            paddingTop: insets.top + 6,
           },
         ]}
       >
         <View style={styles.content}>
+          {/* User Section (Avatar + Name) */}
           <View style={styles.userSection}>
             <View style={styles.avatar}>
-              <Ionicons name="person" size={23} color="#D4C8E3" />
+              <Ionicons name="person" size={22} color="#4A3B18" />
             </View>
 
             <View style={styles.textContainer}>
               <Text style={styles.welcome}>
                 Welcome, <Text style={styles.name}>{firstName}</Text>
               </Text>
-
               <Text style={styles.subtitle}>Let’s Get Things Done!</Text>
             </View>
           </View>
 
+          {/* Action Icons: Bell + Hamburger */}
           <View style={styles.actions}>
             <Pressable
               style={({ pressed }) => [
@@ -93,15 +126,14 @@ export default function AppHeader() {
                 pressed && styles.pressed,
               ]}
               hitSlop={10}
-              onPress={handleNotifications}
+              onPress={() => setNotificationVisible(true)}
             >
               <Ionicons
                 name="notifications-outline"
-                size={30}
-                color="#F5F7F3"
+                size={26}
+                color={COLORS.textDark}
               />
-
-              <View style={styles.notificationDot} />
+              {unreadCount > 0 && <View style={styles.notificationDot} />}
             </Pressable>
 
             <Pressable
@@ -112,51 +144,64 @@ export default function AppHeader() {
               hitSlop={10}
               onPress={() => setMenuVisible(true)}
             >
-              <Ionicons name="menu-outline" size={34} color="#F5F7F3" />
+              <Ionicons name="menu-outline" size={30} color={COLORS.textDark} />
             </Pressable>
           </View>
         </View>
-      </View>
 
+        {/* Optional Header Content (e.g. Today's Progress on Dashboard) */}
+        {headerBottomContent && (
+          <View style={styles.headerBottomContainer}>
+            {headerBottomContent}
+          </View>
+        )}
+      </LinearGradient>
+
+      {/* Standalone Bottom Bar if requested (for stack screens) */}
+      {showBottomBar && <AppBottomBar activeTab={activeTab} />}
+
+      {/* Notifications Pop-up Modal */}
+      <NotificationModal
+        visible={notificationVisible}
+        onClose={() => setNotificationVisible(false)}
+        onNotificationCountChange={setUnreadCount}
+      />
+
+      {/* Profile / Menu Pop-up Modal */}
       <Modal
         visible={menuVisible}
         transparent
         animationType="fade"
         onRequestClose={() => {
-          if (!isLoggingOut) {
-            setMenuVisible(false);
-          }
+          if (!isLoggingOut) setMenuVisible(false);
         }}
       >
         <Pressable
           style={styles.modalOverlay}
           onPress={() => {
-            if (!isLoggingOut) {
-              setMenuVisible(false);
-            }
+            if (!isLoggingOut) setMenuVisible(false);
           }}
         >
           <Pressable
             style={[
               styles.menuContainer,
               {
-                top: insets.top + 72,
+                top: insets.top + 64,
               },
             ]}
-            onPress={(event) => event.stopPropagation()}
+            onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.menuHeader}>
               <View style={styles.menuAvatar}>
-                <Ionicons name="person" size={20} color="#D4C8E3" />
+                <Ionicons name="person" size={20} color={COLORS.primaryGold} />
               </View>
 
               <View style={styles.menuHeaderText}>
                 <Text style={styles.menuTitle} numberOfLines={1}>
                   {fullName}
                 </Text>
-
                 <Text style={styles.menuSubtitle} numberOfLines={1}>
-                  {user?.email || "Kelola akun kamu"}
+                  {user?.email || 'Kelola akun kamu'}
                 </Text>
               </View>
             </View>
@@ -172,18 +217,15 @@ export default function AppHeader() {
               onPress={handleProfile}
             >
               <View style={styles.menuItemIcon}>
-                <Ionicons name="person-outline" size={21} color="#D4C8E3" />
+                <Ionicons name="person-outline" size={20} color={COLORS.goldText} />
               </View>
 
               <View style={styles.menuItemContent}>
                 <Text style={styles.menuItemTitle}>Profile</Text>
-
-                <Text style={styles.menuItemDescription}>
-                  Lihat profil akun
-                </Text>
+                <Text style={styles.menuItemDescription}>Lihat profil akun</Text>
               </View>
 
-              <Ionicons name="chevron-forward" size={19} color="#777C77" />
+              <Ionicons name="chevron-forward" size={18} color="#777C77" />
             </Pressable>
 
             <Pressable
@@ -196,22 +238,21 @@ export default function AppHeader() {
             >
               <View style={styles.logoutIcon}>
                 {isLoggingOut ? (
-                  <ActivityIndicator size="small" color="#E85D5D" />
+                  <ActivityIndicator size="small" color={COLORS.danger} />
                 ) : (
-                  <Ionicons name="log-out-outline" size={21} color="#E85D5D" />
+                  <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
                 )}
               </View>
 
               <View style={styles.menuItemContent}>
                 <Text style={styles.logoutTitle}>
-                  {isLoggingOut ? "Logging out..." : "Logout"}
+                  {isLoggingOut ? 'Logging out...' : 'Logout'}
                 </Text>
-
                 <Text style={styles.menuItemDescription}>Keluar dari akun</Text>
               </View>
 
               {!isLoggingOut && (
-                <Ionicons name="chevron-forward" size={19} color="#777C77" />
+                <Ionicons name="chevron-forward" size={18} color="#777C77" />
               )}
             </Pressable>
           </Pressable>
@@ -223,207 +264,187 @@ export default function AppHeader() {
 
 const styles = StyleSheet.create({
   container: {
-    width: "100%",
-    paddingHorizontal: 24,
-    backgroundColor: "#0A0E0A",
+    width: '100%',
+    paddingHorizontal: 20,
+    paddingBottom: 14,
   },
-
   content: {
-    minHeight: 62,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    minHeight: 52,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-
   userSection: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     flex: 1,
   },
-
   avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#493C59",
-    borderWidth: 1,
-    borderColor: "#9A82B8",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#EAD196',
+    borderWidth: 1.5,
+    borderColor: '#C6A152',
   },
-
   textContainer: {
-    marginLeft: 14,
-  },
-
-  welcome: {
-    fontSize: 17,
-    lineHeight: 21,
-    color: "#F5F7F3",
-    fontWeight: "400",
-  },
-
-  name: {
-    fontWeight: "700",
-  },
-
-  subtitle: {
-    marginTop: 1,
-    fontSize: 12,
-    lineHeight: 16,
-    color: "rgba(245, 247, 243, 0.65)",
-  },
-
-  actions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-
-  actionButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-    position: "relative",
-  },
-
-  notificationDot: {
-    position: "absolute",
-    top: 6,
-    right: 6,
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#E85D5D",
-  },
-
-  menuButton: {
-    width: 40,
-    height: 40,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.35)",
-  },
-
-  menuContainer: {
-    position: "absolute",
-    right: 18,
-    width: 285,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: "#151A15",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 20,
-    elevation: 12,
-  },
-
-  menuHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-
-  menuAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#493C59",
-    borderWidth: 1,
-    borderColor: "#9A82B8",
-  },
-
-  menuHeaderText: {
     marginLeft: 12,
   },
-
-  menuTitle: {
+  welcome: {
+    fontFamily: FONTS.regular,
     fontSize: 15,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    lineHeight: 19,
+    color: COLORS.textDark,
   },
-
+  name: {
+    fontFamily: FONTS.bold,
+    color: COLORS.textDark,
+  },
+  subtitle: {
+    marginTop: 2,
+    fontFamily: FONTS.medium,
+    fontSize: 11,
+    lineHeight: 14,
+    color: 'rgba(28, 25, 23, 0.75)',
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  actionButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notificationDot: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: '#E53935',
+    borderWidth: 1,
+    borderColor: '#FFE8B3',
+  },
+  menuButton: {
+    width: 38,
+    height: 38,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerBottomContainer: {
+    marginTop: 12,
+  },
+  pressed: {
+    opacity: 0.7,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    right: 18,
+    width: 280,
+    paddingVertical: 8,
+    borderRadius: 20,
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorderSubtle,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.35,
+    shadowRadius: 18,
+    elevation: 12,
+  },
+  menuHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  menuAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.goldSoft,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorder,
+  },
+  menuHeaderText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  menuTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.textLight,
+  },
   menuSubtitle: {
     marginTop: 2,
-    fontSize: 12,
-    color: "rgba(245, 247, 243, 0.55)",
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
-
   menuDivider: {
     height: 1,
     marginHorizontal: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.07)",
+    backgroundColor: COLORS.borderSubtle,
+    marginVertical: 4,
   },
-
   menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    minHeight: 66,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
     paddingHorizontal: 14,
     marginHorizontal: 6,
-    borderRadius: 14,
+    borderRadius: 12,
   },
-
   menuItemPressed: {
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
-
   menuItemIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(154, 130, 184, 0.12)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: COLORS.goldSoft,
   },
-
   logoutIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(232, 93, 93, 0.1)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(229, 83, 83, 0.15)',
   },
-
   menuItemContent: {
     flex: 1,
     marginLeft: 12,
   },
-
   menuItemTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.textLight,
   },
-
   logoutTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#E85D5D",
+    fontFamily: FONTS.semiBold,
+    fontSize: 13,
+    color: COLORS.danger,
   },
-
   menuItemDescription: {
-    marginTop: 3,
+    marginTop: 2,
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "rgba(245, 247, 243, 0.5)",
-  },
-
-  pressed: {
-    opacity: 0.7,
+    color: COLORS.textMuted,
   },
 });

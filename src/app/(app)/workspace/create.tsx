@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -8,77 +8,92 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
 import { useWorkspaces } from '@/features/workspace';
-import { WorkspaceForm } from '@/features/workspace/components/WorkspaceForm';
+import {
+  CreateWorkspaceFormData,
+  WorkspaceForm,
+} from '@/features/workspace/components/WorkspaceForm';
+import { workspaceMemberService } from '@/features/workspace/services/workspaceMemberService';
 
 export default function CreateWorkspaceScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
-
   const { addWorkspace } = useWorkspaces();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = async (values: {
-    name: string;
-    description?: string;
-  }) => {
-    const workspace = await addWorkspace(values);
+  const handleSubmit = async (values: CreateWorkspaceFormData) => {
+    try {
+      setIsSubmitting(true);
 
-    router.replace({
-      pathname: '/(app)/workspace/[workspaceId]',
-      params: {
-        workspaceId: workspace.id,
-      },
-    });
+      const workspace = await addWorkspace({
+        name: values.name,
+        description: values.description
+          ? `${values.description} • ${values.type === 'collaborative' ? 'Collaborative Workspace' : 'Personal Workspace'}`
+          : values.type === 'collaborative'
+            ? 'Collaborative Workspace'
+            : 'Personal Workspace',
+      });
+
+      // If collaborative and members were specified, invite them
+      if (values.type === 'collaborative' && values.members.length > 0) {
+        await Promise.allSettled(
+          values.members.map((email) =>
+            workspaceMemberService.createWorkspaceInvitation({
+              workspaceId: workspace.id,
+              email,
+            }),
+          ),
+        );
+      }
+
+      router.replace(`/(app)/workspace/${workspace.id}` as any);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.25, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-          },
-        ]}
-      >
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => router.back()}
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
         >
-          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Buat Workspace</Text>
-        <View style={styles.spacer} />
+          {/* Back chevron */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
+
+          {/* Heading */}
+          <Text style={styles.title}>Create Workspace</Text>
+          <Text style={styles.subtitle}>
+            Workspace can used for academics, personal projects, even collaborative projects purpose.
+          </Text>
+
+          {/* Form */}
+          <WorkspaceForm
+            isSubmitting={isSubmitting}
+            onSubmit={handleSubmit}
+          />
+        </ScrollView>
       </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingBottom: insets.bottom + 40,
-          },
-        ]}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.eyebrow}>NEW WORKSPACE</Text>
-        <Text style={styles.title}>Ruang Kerja Baru</Text>
-        <Text style={styles.subtitle}>
-          Workspace dapat digunakan untuk akademik, project pribadi, maupun project bersama.
-        </Text>
-
-        <WorkspaceForm onSubmit={handleSubmit} />
-      </ScrollView>
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
@@ -86,56 +101,42 @@ export default function CreateWorkspaceScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#060A08',
+    backgroundColor: COLORS.bgBlack,
   },
-  header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    paddingTop: 16,
+    marginTop: -8,
+  },
+  scrollContent: {
+    paddingBottom: 120,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: 'center',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#F5F7F3',
-  },
-  spacer: {
-    width: 40,
-  },
-  content: {
-    padding: 20,
-  },
-  eyebrow: {
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1.5,
-    color: '#8DB88D',
-    marginBottom: 4,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 26,
-    fontWeight: '800',
-    color: '#F5F7F3',
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.goldText,
+    marginBottom: 6,
   },
   subtitle: {
-    marginTop: 6,
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    lineHeight: 17,
+    color: '#8E8E93',
     marginBottom: 24,
-    fontSize: 13,
-    lineHeight: 19,
-    color: '#8E998F',
   },
   pressed: {
     opacity: 0.7,
   },
-});
+});

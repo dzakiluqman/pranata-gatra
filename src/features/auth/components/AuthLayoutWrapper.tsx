@@ -1,4 +1,5 @@
-import React, { PropsWithChildren } from "react";
+import { StatusBar } from 'expo-status-bar';
+import React, { PropsWithChildren } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -6,9 +7,10 @@ import {
   ScrollView,
   StyleSheet,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { StatusBar } from "expo-status-bar";
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { COLORS } from '@/constants/theme';
 
 interface AuthLayoutWrapperProps extends PropsWithChildren {
   topFlex?: number;
@@ -33,16 +35,16 @@ export default function AuthLayoutWrapper({
         ]}
       >
         <Image
-          source={require("../../../../assets/images/pranata-auth-logo.png")}
+          source={require('../../../../assets/images/pranata-auth-logo.png')}
           style={styles.logo}
           resizeMode="contain"
         />
       </View>
 
-      {/* Bottom Black Card Area */}
+      {/* Bottom Black Sheet Area */}
       <KeyboardAvoidingView
         style={styles.keyboardView}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={styles.bottomCardContainer}>
           <ScrollView
@@ -67,14 +69,14 @@ export default function AuthLayoutWrapper({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
   },
   topHeader: {
-    height: "32%",
-    minHeight: 180,
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
+    height: '30%',
+    minHeight: 160,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 24,
   },
   logo: {
@@ -86,10 +88,10 @@ const styles = StyleSheet.create({
   },
   bottomCardContainer: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: COLORS.bgBlack,
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   scrollContent: {
     flexGrow: 1,

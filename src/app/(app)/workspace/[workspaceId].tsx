@@ -1,21 +1,20 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React from 'react';
 import {
   Alert,
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
 
-import { useWorkspace } from "@/features/workspace";
-import { WorkspaceDetail } from "@/features/workspace/components/WorkspaceDetail";
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS } from '@/constants/theme';
+import { useWorkspace } from '@/features/workspace';
+import { WorkspaceDetail } from '@/features/workspace/components/WorkspaceDetail';
 
 export default function WorkspaceDetailScreen() {
-  const insets = useSafeAreaInsets();
   const router = useRouter();
 
   const { workspaceId } = useLocalSearchParams<{
@@ -27,27 +26,26 @@ export default function WorkspaceDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Hapus Workspace",
+      'Hapus Workspace',
       `Apakah kamu yakin ingin menghapus "${workspace?.name}"?`,
       [
         {
-          text: "Batal",
-          style: "cancel",
+          text: 'Batal',
+          style: 'cancel',
         },
         {
-          text: "Hapus",
-          style: "destructive",
+          text: 'Hapus',
+          style: 'destructive',
           onPress: async () => {
             try {
               await removeWorkspace();
-
-              router.replace("/(app)/workspace");
+              router.replace('/(app)/(tabs)/workspace' as any);
             } catch (err) {
               Alert.alert(
-                "Gagal",
+                'Gagal',
                 err instanceof Error
                   ? err.message
-                  : "Gagal menghapus workspace.",
+                  : 'Gagal menghapus workspace.',
               );
             }
           },
@@ -57,85 +55,59 @@ export default function WorkspaceDetailScreen() {
   };
 
   const handleEdit = () => {
-    router.push({
-      pathname: "/(app)/workspace/[workspaceId]/settings",
-      params: {
-        workspaceId,
-      },
-    });
+    router.push(`/(app)/workspace/${workspaceId}/settings` as any);
   };
 
   const handleTasks = () => {
-    router.push({
-      pathname: "/(app)/workspace/[workspaceId]/tasks",
-      params: {
-        workspaceId,
-      },
-    });
+    router.push(`/(app)/workspace/${workspaceId}/tasks` as any);
   };
 
   const handleSubjects = () => {
-    router.push({
-      pathname: "/(app)/workspace/[workspaceId]/subjects",
-      params: {
-        workspaceId,
-      },
-    });
+    router.push(`/(app)/workspace/${workspaceId}/subjects` as any);
   };
 
   const handleMembers = () => {
-    router.push(`/(app)/workspace/${workspaceId}/members`);
+    router.push(`/(app)/workspace/${workspaceId}/members` as any);
   };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.25, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.header,
-          {
-            paddingTop: insets.top + 10,
-          },
-        ]}
-      >
-        <Pressable
-          style={({ pressed }) => [
-            styles.backButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={() => router.back()}
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
         >
-          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
-        </Pressable>
-        <Text style={styles.headerTitle}>Workspace</Text>
-        <View style={styles.spacer} />
+          {/* Back chevron */}
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
+
+          <WorkspaceDetail
+            workspace={workspace}
+            isLoading={isLoading}
+            error={error}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            onTasks={handleTasks}
+            onSubjects={handleSubjects}
+            onMembers={handleMembers}
+          />
+        </ScrollView>
       </View>
 
-      <ScrollView
-        contentContainerStyle={[
-          styles.content,
-          {
-            paddingBottom: insets.bottom + 40,
-          },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        <WorkspaceDetail
-          workspace={workspace}
-          isLoading={isLoading}
-          error={error}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-          onTasks={handleTasks}
-          onSubjects={handleSubjects}
-          onMembers={handleMembers}
-        />
-      </ScrollView>
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
@@ -143,44 +115,29 @@ export default function WorkspaceDetailScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
-
-  header: {
-    height: 56,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  blackSheet: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    paddingTop: 16,
+    marginTop: -8,
   },
-
+  scrollContent: {
+    paddingBottom: 120,
+  },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    marginBottom: 12,
   },
-
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F5F7F3",
-  },
-
-  spacer: {
-    width: 40,
-  },
-
-  content: {
-    padding: 20,
-  },
-
   pressed: {
     opacity: 0.7,
   },
 });
-

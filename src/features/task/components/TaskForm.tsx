@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { LinearGradient } from "expo-linear-gradient";
 import { useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -13,6 +14,7 @@ import {
   View,
 } from "react-native";
 
+import { COLORS, FONTS } from "@/constants/theme";
 import { createTaskSchema } from "../schemas/taskSchemas";
 import type { TaskStatus, TaskWithRelations } from "../types/task.types";
 
@@ -725,23 +727,30 @@ export function TaskForm({
           <Pressable
             onPress={handleSubmit}
             disabled={isSubmitting}
-            style={[styles.submitButton, isSubmitting && styles.disabledButton]}
+            style={[styles.submitButtonWrapper, isSubmitting && styles.disabledButton]}
           >
-            {isSubmitting ? (
-              <ActivityIndicator size="small" color="#0A0E0A" />
-            ) : (
-              <>
-                <Ionicons
-                  name={isEditing ? "save-outline" : "add-outline"}
-                  size={19}
-                  color="#0A0E0A"
-                />
+            <LinearGradient
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.submitButtonGradient}
+            >
+              {isSubmitting ? (
+                <ActivityIndicator size="small" color={COLORS.textDark} />
+              ) : (
+                <>
+                  <Ionicons
+                    name={isEditing ? "save-outline" : "add-outline"}
+                    size={19}
+                    color={COLORS.textDark}
+                  />
 
-                <Text style={styles.submitButtonText}>
-                  {isEditing ? "Simpan Perubahan" : "Buat Tugas"}
-                </Text>
-              </>
-            )}
+                  <Text style={styles.submitButtonText}>
+                    {isEditing ? "Simpan Perubahan" : "Buat Tugas"}
+                  </Text>
+                </>
+              )}
+            </LinearGradient>
           </Pressable>
         </View>
       </ScrollView>
@@ -766,13 +775,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   sectionTitle: {
+    fontFamily: FONTS.bold,
     fontSize: 15,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    color: COLORS.goldText,
   },
   sectionSubtitle: {
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "#8E998F",
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   field: {
@@ -784,34 +794,38 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   label: {
+    fontFamily: FONTS.semiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#DCE3DC",
+    color: COLORS.goldText,
   },
   counter: {
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "#8E998F",
+    color: COLORS.textMuted,
   },
   input: {
     minHeight: 50,
-    borderRadius: 14,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    paddingHorizontal: 15,
+    borderColor: COLORS.goldBorder,
+    backgroundColor: COLORS.bgInput,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    fontFamily: FONTS.regular,
     fontSize: 14,
-    color: "#F5F7F3",
+    color: COLORS.textLight,
   },
   inputError: {
-    borderColor: "#FF8A8A",
+    borderColor: COLORS.danger,
   },
   textArea: {
     minHeight: 110,
+    borderRadius: 20,
   },
   errorText: {
+    fontFamily: FONTS.regular,
     fontSize: 12,
-    color: "#FF8A8A",
+    color: COLORS.danger,
   },
   optionsContainer: {
     gap: 9,
@@ -823,14 +837,14 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingHorizontal: 14,
     paddingVertical: 11,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderColor: COLORS.borderCard,
+    backgroundColor: COLORS.bgCard,
   },
   selectedOption: {
-    borderColor: "#A8D8A8",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    borderColor: COLORS.primaryGold,
+    backgroundColor: COLORS.goldSoft,
   },
   radio: {
     width: 19,
@@ -842,25 +856,25 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   selectedRadio: {
-    borderColor: "#A8D8A8",
+    borderColor: COLORS.primaryGold,
   },
   radioDot: {
     width: 9,
     height: 9,
     borderRadius: 5,
-    backgroundColor: "#A8D8A8",
+    backgroundColor: COLORS.primaryGold,
   },
   optionContent: {
     flex: 1,
   },
   optionText: {
     flex: 1,
+    fontFamily: FONTS.semiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#DCE3DC",
+    color: COLORS.textLight,
   },
   selectedOptionText: {
-    color: "#A8D8A8",
+    color: COLORS.goldText,
   },
   memberAvatar: {
     width: 32,
@@ -868,18 +882,19 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.12)",
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.25)",
+    borderColor: COLORS.goldBorder,
   },
   avatarText: {
+    fontFamily: FONTS.bold,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#A8D8A8",
+    color: COLORS.goldText,
   },
   memberEmail: {
+    fontFamily: FONTS.regular,
     fontSize: 11,
-    color: "#8E998F",
+    color: COLORS.textMuted,
     marginTop: 2,
   },
   selectedInfo: {
@@ -888,21 +903,21 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 13,
     paddingVertical: 9,
-    borderRadius: 10,
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    borderRadius: 12,
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.15)",
+    borderColor: COLORS.goldBorderSubtle,
   },
   selectedInfoText: {
     flex: 1,
+    fontFamily: FONTS.semiBold,
     fontSize: 12,
-    fontWeight: "600",
-    color: "#A8D8A8",
+    color: COLORS.goldText,
   },
   clearText: {
+    fontFamily: FONTS.bold,
     fontSize: 12,
-    fontWeight: "700",
-    color: "#FF8A8A",
+    color: COLORS.danger,
   },
   deadlineActions: {
     flexDirection: "row",
@@ -915,25 +930,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     paddingHorizontal: 13,
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderColor: COLORS.goldBorderSubtle,
+    backgroundColor: COLORS.bgCard,
   },
   dateButtonContent: {
     flex: 1,
     gap: 2,
   },
   dateButtonLabel: {
+    fontFamily: FONTS.medium,
     fontSize: 10,
-    color: "#8E998F",
+    color: COLORS.textMuted,
     textTransform: "uppercase",
     letterSpacing: 0.8,
   },
   dateButtonValue: {
+    fontFamily: FONTS.semiBold,
     fontSize: 13,
-    fontWeight: "600",
-    color: "#F5F7F3",
+    color: COLORS.textLight,
   },
   deadlinePreview: {
     flexDirection: "row",
@@ -941,14 +957,15 @@ const styles = StyleSheet.create({
     gap: 7,
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    borderRadius: 12,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.06)",
+    borderColor: COLORS.borderCard,
   },
   deadlinePreviewText: {
+    fontFamily: FONTS.regular,
     fontSize: 12,
-    color: "#DCE3DC",
+    color: COLORS.textLight,
   },
   statusContainer: {
     flexDirection: "row",
@@ -960,23 +977,23 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minHeight: 44,
     paddingHorizontal: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-    backgroundColor: "rgba(255, 255, 255, 0.03)",
+    borderColor: COLORS.borderCard,
+    backgroundColor: COLORS.bgCard,
   },
   selectedStatusButton: {
-    backgroundColor: "rgba(168, 216, 168, 0.12)",
-    borderColor: "#A8D8A8",
+    backgroundColor: COLORS.goldSoft,
+    borderColor: COLORS.primaryGold,
   },
   statusButtonText: {
+    fontFamily: FONTS.medium,
     fontSize: 12,
-    fontWeight: "600",
-    color: "#8E998F",
+    color: COLORS.textMuted,
   },
   selectedStatusButtonText: {
-    color: "#A8D8A8",
-    fontWeight: "700",
+    color: COLORS.goldText,
+    fontFamily: FONTS.bold,
   },
   actions: {
     flexDirection: "row",
@@ -988,32 +1005,35 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
+    borderRadius: 25,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderColor: COLORS.borderCard,
+    backgroundColor: COLORS.bgCard,
   },
   cancelButtonText: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "700",
-    color: "#DCE3DC",
+    color: COLORS.textMuted,
   },
-  submitButton: {
+  submitButtonWrapper: {
     flex: 1,
+    borderRadius: 25,
+    overflow: "hidden",
+  },
+  submitButtonGradient: {
     minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    borderRadius: 14,
-    backgroundColor: "#A8D8A8",
+    borderRadius: 25,
   },
   disabledButton: {
     opacity: 0.6,
   },
   submitButtonText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#0A0E0A",
+    fontFamily: FONTS.bold,
+    fontSize: 14,
+    color: COLORS.textDark,
   },
 });

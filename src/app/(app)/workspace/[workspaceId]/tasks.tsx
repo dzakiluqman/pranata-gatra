@@ -1,7 +1,7 @@
-import { Ionicons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import { router, useLocalSearchParams } from "expo-router";
-import { useState } from "react";
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,19 +11,18 @@ import {
   Text,
   TextInput,
   View,
-} from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+} from 'react-native';
 
+import AppHeader from '@/components/navigation/AppHeader';
+import { COLORS, FONTS } from '@/constants/theme';
 import {
   TaskCard,
   useUpdateTaskStatus,
   useWorkspaceTasks,
-} from "@/features/task";
-
-import { useWorkspace } from "@/features/workspace/hooks/useWorkspace";
+} from '@/features/task';
+import { useWorkspace } from '@/features/workspace/hooks/useWorkspace';
 
 export default function WorkspaceTasksScreen() {
-  const insets = useSafeAreaInsets();
   const { workspaceId } = useLocalSearchParams<{
     workspaceId: string;
   }>();
@@ -32,14 +31,13 @@ export default function WorkspaceTasksScreen() {
   const tasksQuery = useWorkspaceTasks(workspaceId);
   const updateStatusMutation = useUpdateTaskStatus();
 
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
 
   const tasks = tasksQuery.data ?? [];
 
   const filteredTasks = search.trim()
     ? tasks.filter((task) => {
         const query = search.trim().toLowerCase();
-
         return (
           task.title.toLowerCase().includes(query) ||
           task.description?.toLowerCase().includes(query) ||
@@ -52,25 +50,16 @@ export default function WorkspaceTasksScreen() {
 
   const handleCreate = () => {
     router.push({
-      pathname: "/task/create",
+      pathname: '/(app)/task/create',
       params: {
         workspaceId,
       },
-    });
-  };
-
-  const handleTaskPress = (taskId: string) => {
-    router.push({
-      pathname: "/task/[taskId]",
-      params: {
-        taskId,
-      },
-    });
+    } as any);
   };
 
   const handleStatusChange = async (
     taskId: string,
-    status: "pending" | "in_progress" | "completed",
+    status: 'pending' | 'in_progress' | 'completed',
   ) => {
     await updateStatusMutation.mutateAsync({
       taskId,
@@ -78,208 +67,127 @@ export default function WorkspaceTasksScreen() {
     });
   };
 
-  if (workspaceQuery.isLoading || tasksQuery.isLoading) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.center}>
-          <ActivityIndicator size="large" color="#A8D8A8" />
-          <Text style={styles.loadingText}>Memuat tugas workspace...</Text>
-        </View>
-      </View>
-    );
-  }
-
-  if (workspaceQuery.error || tasksQuery.error) {
-    const error = workspaceQuery.error ?? tasksQuery.error;
-
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
-          style={StyleSheet.absoluteFill}
-        />
-        <View style={styles.center}>
-          <View style={styles.errorIcon}>
-            <Ionicons name="alert-circle-outline" size={32} color="#FF8A8A" />
-          </View>
-
-          <Text style={styles.errorTitle}>Gagal memuat tugas</Text>
-
-          <Text style={styles.errorMessage}>
-            {error instanceof Error
-              ? error.message
-              : "Terjadi kesalahan saat mengambil data."}
-          </Text>
-
-          <Pressable
-            style={styles.retryButton}
-            onPress={() => {
-              workspaceQuery.refresh();
-              tasksQuery.refetch();
-            }}
-          >
-            <Text style={styles.retryText}>Coba Lagi</Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
+  const handleTaskPress = (taskId: string) => {
+    router.push({
+      pathname: '/(app)/task/[taskId]',
+      params: {
+        taskId,
+      },
+    } as any);
+  };
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.25, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      {/* Top Header on Gold Gradient */}
+      <AppHeader />
 
-      <View
-        style={[
-          styles.contentWrapper,
-          {
-            paddingTop: insets.top + 14,
-          },
-        ]}
-      >
-        <View style={styles.header}>
-          <View style={styles.headerTop}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.backButton,
-                pressed && styles.pressed,
-              ]}
-              onPress={() => router.back()}
-            >
-              <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
-            </Pressable>
+      {/* Black Curved Sheet */}
+      <View style={styles.blackSheet}>
+        {/* Navigation row: Back + Title + Add Button */}
+        <View style={styles.topRow}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => router.back()}
+            hitSlop={10}
+          >
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
+          </Pressable>
 
-            <Pressable
-              style={({ pressed }) => [
-                styles.addButton,
-                pressed && styles.pressed,
-              ]}
-              onPress={handleCreate}
-            >
-              <Ionicons name="add" size={24} color="#0A0E0A" />
-            </Pressable>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title} numberOfLines={1}>
+              {workspace?.name ? `${workspace.name} Tasks` : 'Workspace Tasks'}
+            </Text>
           </View>
 
-          <Text style={styles.title}>{workspace?.name ?? "Tasks"}</Text>
-
-          <Text style={styles.subtitle}>
-            {tasks.length} tugas dalam workspace ini
-          </Text>
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButtonWrapper,
+              pressed && styles.pressed,
+            ]}
+            onPress={handleCreate}
+            hitSlop={8}
+          >
+            <LinearGradient
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.addButtonGradient}
+            >
+              <Ionicons name="add" size={22} color={COLORS.textDark} />
+            </LinearGradient>
+          </Pressable>
         </View>
 
+        {/* Search */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search-outline" size={19} color="#8E998F" />
-
+          <Ionicons name="search-outline" size={18} color={COLORS.goldText} />
           <TextInput
             value={search}
             onChangeText={setSearch}
-            placeholder="Cari tugas..."
-            placeholderTextColor="#8E998F"
+            placeholder="Cari tugas workspace..."
+            placeholderTextColor="#666666"
             style={styles.searchInput}
-            returnKeyType="search"
           />
-
-          {!!search && (
-            <Pressable onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={18} color="#8E998F" />
+          {Boolean(search) && (
+            <Pressable onPress={() => setSearch('')} hitSlop={6}>
+              <Ionicons name="close-circle" size={18} color="#8E8E93" />
             </Pressable>
           )}
         </View>
 
-        <View style={styles.summary}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {tasks.filter((task) => task.status === "pending").length}
-            </Text>
-
-            <Text style={styles.summaryLabel}>Pending</Text>
+        {/* Task List */}
+        {tasksQuery.isLoading ? (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color={COLORS.primaryGold} />
+            <Text style={styles.loadingText}>Memuat tugas...</Text>
           </View>
-
-          <View style={styles.summaryDivider} />
-
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {tasks.filter((task) => task.status === "in_progress").length}
-            </Text>
-
-            <Text style={styles.summaryLabel}>Dikerjakan</Text>
-          </View>
-
-          <View style={styles.summaryDivider} />
-
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryNumber}>
-              {tasks.filter((task) => task.status === "completed").length}
-            </Text>
-
-            <Text style={styles.summaryLabel}>Selesai</Text>
-          </View>
-        </View>
-
-        <FlatList
-          data={filteredTasks}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          contentContainerStyle={[
-            styles.listContent,
-            {
-              paddingBottom: insets.bottom + 40,
-            },
-            filteredTasks.length === 0 && styles.emptyList,
-          ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={tasksQuery.isRefetching}
-              onRefresh={() => tasksQuery.refetch()}
-              tintColor="#A8D8A8"
-            />
-          }
-          renderItem={({ item }) => (
-            <TaskCard
-              task={item}
-              onPress={() => handleTaskPress(item.id)}
-              onStatusChange={() =>
-                handleStatusChange(
-                  item.id,
-                  item.status === "completed" ? "pending" : "completed",
-                )
-              }
-            />
-          )}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIcon}>
+        ) : (
+          <FlatList
+            data={filteredTasks}
+            keyExtractor={(item) => item.id}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={tasksQuery.isRefetching}
+                onRefresh={() => tasksQuery.refetch()}
+                tintColor={COLORS.primaryGold}
+              />
+            }
+            renderItem={({ item }) => (
+              <TaskCard
+                task={item}
+                onPress={() => handleTaskPress(item.id)}
+                onStatusChange={() =>
+                  handleStatusChange(
+                    item.id,
+                    item.status === 'completed' ? 'pending' : 'completed',
+                  )
+                }
+              />
+            )}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
                 <Ionicons
-                  name="clipboard-outline"
-                  size={38}
-                  color="#A8D8A8"
+                  name="checkbox-outline"
+                  size={40}
+                  color={COLORS.primaryGold}
                 />
+                <Text style={styles.emptyTitle}>Belum ada tugas</Text>
+                <Text style={styles.emptySubtitle}>
+                  Tambahkan tugas baru untuk workspace ini.
+                </Text>
               </View>
-
-              <Text style={styles.emptyTitle}>Belum ada tugas</Text>
-
-              <Text style={styles.emptyMessage}>
-                Workspace ini belum memiliki tugas.
-              </Text>
-
-              <Pressable style={styles.emptyButton} onPress={handleCreate}>
-                <Ionicons name="add" size={18} color="#0A0E0A" />
-
-                <Text style={styles.emptyButtonText}>Buat Tugas</Text>
-              </Pressable>
-            </View>
-          }
-        />
+            }
+          />
+        )}
       </View>
+
+      {/* Bottom Floating Navigation Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
@@ -287,193 +195,100 @@ export default function WorkspaceTasksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
-  contentWrapper: {
+  blackSheet: {
     flex: 1,
+    backgroundColor: COLORS.bgBlack,
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
     paddingHorizontal: 20,
+    paddingTop: 16,
+    marginTop: -8,
   },
-  header: {
-    paddingBottom: 16,
-  },
-  headerTop: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
   },
-  addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#A8D8A8",
+  titleContainer: {
+    flex: 1,
+    marginHorizontal: 8,
   },
   title: {
-    fontSize: 27,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 17,
+    color: COLORS.goldText,
   },
-  subtitle: {
-    marginTop: 4,
-    fontSize: 13,
-    color: "#8E998F",
+  addButtonWrapper: {
+    borderRadius: 18,
+    overflow: 'hidden',
+  },
+  addButtonGradient: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   searchContainer: {
-    height: 50,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    borderRadius: 16,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: COLORS.goldBorder,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    gap: 10,
     marginBottom: 14,
   },
   searchInput: {
     flex: 1,
-    marginHorizontal: 10,
-    fontSize: 15,
-    color: "#F5F7F3",
-  },
-  summary: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    marginBottom: 14,
-    paddingVertical: 14,
-    borderRadius: 18,
-    backgroundColor: "rgba(255, 255, 255, 0.04)",
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
-  },
-  summaryItem: {
-    alignItems: "center",
-    flex: 1,
-  },
-  summaryNumber: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#F5F7F3",
-  },
-  summaryLabel: {
-    marginTop: 2,
-    fontSize: 11,
-    color: "#8E998F",
-  },
-  summaryDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: "rgba(255, 255, 255, 0.06)",
-  },
-  separator: {
-    height: 10,
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textLight,
   },
   listContent: {
-    paddingTop: 4,
-  },
-  emptyList: {
-    flexGrow: 1,
-    justifyContent: "center",
-  },
-  emptyContainer: {
-    alignItems: "center",
-    paddingHorizontal: 30,
-    paddingVertical: 40,
-  },
-  emptyIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 38,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
-    marginBottom: 16,
-  },
-  emptyTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#F5F7F3",
-  },
-  emptyMessage: {
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 20,
-    textAlign: "center",
-    color: "#8E998F",
-  },
-  emptyButton: {
-    marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 7,
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#A8D8A8",
-  },
-  emptyButtonText: {
-    color: "#0A0E0A",
-    fontSize: 14,
-    fontWeight: "700",
+    paddingBottom: 120,
   },
   center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 30,
+    paddingVertical: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   loadingText: {
     marginTop: 12,
-    fontSize: 14,
-    color: "#8E998F",
+    fontFamily: FONTS.regular,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
-  errorIcon: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(255, 138, 138, 0.12)",
-    marginBottom: 16,
+  emptyContainer: {
+    paddingVertical: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
   },
-  errorTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#F5F7F3",
+  emptyTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 15,
+    color: COLORS.textLight,
   },
-  errorMessage: {
-    marginTop: 7,
-    fontSize: 14,
-    lineHeight: 21,
-    textAlign: "center",
-    color: "#8E998F",
-  },
-  retryButton: {
-    marginTop: 20,
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    borderRadius: 12,
-    backgroundColor: "#A8D8A8",
-  },
-  retryText: {
-    color: "#0A0E0A",
-    fontSize: 14,
-    fontWeight: "700",
+  emptySubtitle: {
+    fontFamily: FONTS.regular,
+    fontSize: 12,
+    color: COLORS.textMuted,
+    textAlign: 'center',
   },
   pressed: {
     opacity: 0.75,
   },
 });
-
