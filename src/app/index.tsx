@@ -1,12 +1,22 @@
+import { useEffect, useState } from 'react';
 import { Redirect } from 'expo-router';
 
-import { useSession } from '@/features/auth';
+import { SplashScreen, useSession } from '@/features/auth';
 
 export default function Index() {
   const { session, isLoading } = useSession();
+  const [isSplashDone, setIsSplashDone] = useState(false);
 
-  if (isLoading) {
-    return null;
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsSplashDone(true);
+    }, 1500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (isLoading || !isSplashDone) {
+    return <SplashScreen />;
   }
 
   if (session) {

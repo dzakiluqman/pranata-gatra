@@ -1,3 +1,4 @@
+import React from "react";
 import { Controller, useForm } from "react-hook-form";
 import { LinearGradient } from "expo-linear-gradient";
 import {
@@ -9,18 +10,14 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import { zodResolver } from "@hookform/resolvers/zod";
-
-import { emailSchema, type EmailFormValues } from "../schemas/authSchemas";
-
-import { useAuth } from "../hooks/useAuth";
-
 import { router } from "expo-router";
 
+import { emailSchema, type EmailFormValues } from "../schemas/authSchemas";
+import { useAuth } from "../hooks/useAuth";
+import AuthLayoutWrapper from "./AuthLayoutWrapper";
+
 export default function RegisterForm() {
-  const insets = useSafeAreaInsets();
   const { sendEmailOtp } = useAuth();
 
   const {
@@ -59,187 +56,148 @@ export default function RegisterForm() {
   };
 
   return (
-    <View style={styles.container}>
-      <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.3, 0.65, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+    <AuthLayoutWrapper>
+      <View style={styles.header}>
+        <Text style={styles.title}>Create Account</Text>
+        <Text style={styles.subtitle}>
+          Input your active email address to receive OTP code
+        </Text>
+      </View>
 
-      <View
-        style={[
-          styles.content,
-          {
-            paddingTop: insets.top + 24,
-            paddingBottom: insets.bottom + 24,
-          },
-        ]}
-      >
-        <View style={styles.header}>
-          <Text style={styles.eyebrow}>PRANATA GATRA</Text>
-          <Text style={styles.title}>Buat Akun</Text>
-          <Text style={styles.subtitle}>
-            Masukkan email aktif untuk menerima kode OTP.
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <Text style={styles.label}>Email</Text>
-          <Controller
-            control={control}
-            name="email"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <TextInput
-                style={styles.input}
-                placeholder="nama@email.com"
-                placeholderTextColor="#8E998F"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                autoCorrect={false}
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-              />
-            )}
-          />
-
-          {errors.email && (
-            <Text style={styles.error}>{errors.email.message}</Text>
+      <View style={styles.form}>
+        <Text style={styles.label}>Email Address</Text>
+        <Controller
+          control={control}
+          name="email"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <TextInput
+              style={styles.input}
+              placeholder="example@gmail.com"
+              placeholderTextColor="#757575"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+            />
           )}
+        />
 
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.pressed,
-              isSubmitting && styles.buttonDisabled,
-            ]}
-            disabled={isSubmitting}
-            onPress={handleSubmit(onSubmit)}
+        {errors.email && (
+          <Text style={styles.error}>{errors.email.message}</Text>
+        )}
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.buttonWrapper,
+            pressed && styles.pressed,
+            isSubmitting && styles.buttonDisabled,
+          ]}
+          disabled={isSubmitting}
+          onPress={handleSubmit(onSubmit)}
+        >
+          <LinearGradient
+            colors={["#B38D46", "#FFE8B3"]}
+            start={{ x: 0, y: 0.5 }}
+            end={{ x: 1, y: 0.5 }}
+            style={styles.gradientButton}
           >
             {isSubmitting ? (
-              <ActivityIndicator color="#0A0E0A" />
+              <ActivityIndicator color="#000000" />
             ) : (
-              <Text style={styles.buttonText}>Lanjut</Text>
+              <Text style={styles.buttonText}>Sign Up</Text>
             )}
-          </Pressable>
+          </LinearGradient>
+        </Pressable>
 
-          <Pressable
-            style={styles.switchAuthButton}
-            onPress={() => router.push("/(auth)/login")}
-          >
-            <Text style={styles.switchAuthText}>
-              Sudah punya akun?{" "}
-              <Text style={styles.switchAuthHighlight}>Masuk di sini</Text>
-            </Text>
-          </Pressable>
-        </View>
+        <Pressable
+          style={styles.switchAuthButton}
+          onPress={() => router.push("/(auth)/login")}
+        >
+          <Text style={styles.switchAuthText}>
+            Already have account?{" "}
+            <Text style={styles.switchAuthHighlight}>Sign In</Text>
+          </Text>
+        </Pressable>
       </View>
-    </View>
+    </AuthLayoutWrapper>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#060A08",
-  },
-
-  content: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-
   header: {
-    marginBottom: 28,
+    marginBottom: 32,
   },
-
-  eyebrow: {
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 1.5,
-    color: "#8DB88D",
-    marginBottom: 6,
-  },
-
   title: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#B38D46",
+    letterSpacing: -0.3,
   },
-
   subtitle: {
     marginTop: 6,
     fontSize: 14,
-    color: "#8E998F",
+    color: "#D0C7B7",
   },
-
   form: {
     width: "100%",
   },
-
   label: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#DCE3DC",
-    marginBottom: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFE8B3",
+    marginBottom: 10,
   },
-
   input: {
     height: 52,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
+    borderWidth: 1.5,
+    borderColor: "#B38D46",
+    borderRadius: 26,
+    paddingHorizontal: 20,
     fontSize: 15,
-    backgroundColor: "#151A15",
-    color: "#F5F7F3",
+    backgroundColor: "#1F1F1F",
+    color: "#FFFFFF",
   },
-
   error: {
     marginTop: 6,
-    color: "#FF8A8A",
+    color: "#FF6B6B",
     fontSize: 13,
   },
-
-  button: {
+  buttonWrapper: {
+    marginTop: 24,
+    borderRadius: 26,
+    overflow: "hidden",
+  },
+  gradientButton: {
     height: 52,
-    marginTop: 22,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
-    backgroundColor: "#A8D8A8",
+    borderRadius: 26,
   },
-
   buttonDisabled: {
     opacity: 0.6,
   },
-
   buttonText: {
-    color: "#0A0E0A",
-    fontSize: 15,
+    color: "#000000",
+    fontSize: 16,
     fontWeight: "700",
   },
-
   switchAuthButton: {
-    marginTop: 20,
+    marginTop: 24,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 8,
   },
-
   switchAuthText: {
     fontSize: 14,
-    color: "#8E998F",
+    color: "#BDB39E",
   },
-
   switchAuthHighlight: {
-    color: "#A8D8A8",
+    color: "#FFE8B3",
     fontWeight: "700",
   },
-
   pressed: {
-    opacity: 0.75,
+    opacity: 0.85,
   },
 });
-
