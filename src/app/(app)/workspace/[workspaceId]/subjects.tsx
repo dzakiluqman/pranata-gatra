@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Modal,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -60,7 +61,7 @@ export default function SubjectsScreen() {
           onPress: async () => {
             try {
               setDeletingId(subject.id);
-              await deleteSubject.mutateAsync(subject.id);
+              await deleteSubject(subject.id);
               refetch();
             } catch (err) {
               Alert.alert(
@@ -135,8 +136,8 @@ export default function SubjectsScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -209,26 +210,53 @@ export default function SubjectsScreen() {
         )}
 
         {/* Modal Form for Add/Edit Subject */}
-        {(showForm || editingSubject) && (
-          <SubjectForm
-            visible={showForm || Boolean(editingSubject)}
-            workspaceId={workspaceId!}
-            subject={editingSubject ?? undefined}
-            onClose={() => {
+        <Modal
+          visible={showForm || Boolean(editingSubject)}
+          transparent
+          animationType="fade"
+          onRequestClose={() => {
+            setShowForm(false);
+            setEditingSubject(null);
+          }}
+        >
+          <Pressable
+            style={styles.modalOverlay}
+            onPress={() => {
               setShowForm(false);
               setEditingSubject(null);
             }}
-            onSuccess={() => {
-              setShowForm(false);
-              setEditingSubject(null);
-              refetch();
-            }}
-          />
-        )}
+          >
+            <Pressable
+              style={styles.modalContent}
+              onPress={(e) => e.stopPropagation()}
+            >
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>
+                  {editingSubject ? 'Edit Subject' : 'Tambah Subject'}
+                </Text>
+                <Pressable
+                  onPress={() => {
+                    setShowForm(false);
+                    setEditingSubject(null);
+                  }}
+                  hitSlop={8}
+                >
+                  <Ionicons name="close" size={22} color={COLORS.textMuted} />
+                </Pressable>
+              </View>
+              <SubjectForm
+                workspaceId={workspaceId!}
+                initial={editingSubject}
+                onSuccess={() => {
+                  setShowForm(false);
+                  setEditingSubject(null);
+                  refetch();
+                }}
+              />
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }
@@ -358,5 +386,31 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
+    width: '100%',
+    backgroundColor: COLORS.bgCard,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: COLORS.goldBorderSubtle,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontFamily: FONTS.bold,
+    fontSize: 16,
+    color: COLORS.goldText,
   },
 });

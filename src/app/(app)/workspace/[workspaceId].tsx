@@ -72,8 +72,8 @@ export default function WorkspaceDetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -105,9 +105,6 @@ export default function WorkspaceDetailScreen() {
           />
         </ScrollView>
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }

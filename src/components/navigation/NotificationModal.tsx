@@ -106,7 +106,7 @@ export default function NotificationModal({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [onNotificationCountChange]);
 
 
 

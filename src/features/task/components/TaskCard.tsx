@@ -6,8 +6,6 @@ import { COLORS, FONTS } from '@/constants/theme';
 
 import type { TaskWithRelations } from '../types/task.types';
 import {
-  formatDeadlineRelative,
-  getTaskPriority,
   isTaskOverdue,
 } from '../utils/taskPriority';
 import { TaskPriorityBadge } from './TaskPriorityBadge';
@@ -45,7 +43,6 @@ export function TaskCard({
   compact = false,
 }: TaskCardProps) {
   const overdue = task.status !== 'completed' && isTaskOverdue(task.deadline);
-  const priority = getTaskPriority(task.deadline);
 
   return (
     <Pressable
@@ -99,7 +96,7 @@ export function TaskCard({
       <View style={styles.metaRow}>
         <View style={styles.badges}>
           <TaskStatusBadge status={task.status} />
-          <TaskPriorityBadge priority={priority} />
+          <TaskPriorityBadge deadline={task.deadline} />
         </View>
 
         <View style={styles.deadlineInfo}>

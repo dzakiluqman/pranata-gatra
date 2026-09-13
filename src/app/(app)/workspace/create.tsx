@@ -40,9 +40,9 @@ export default function CreateWorkspaceScreen() {
       if (values.type === 'collaborative' && values.members.length > 0) {
         await Promise.allSettled(
           values.members.map((email) =>
-            workspaceMemberService.createWorkspaceInvitation({
+            workspaceMemberService.createInvitation({
               workspaceId: workspace.id,
-              email,
+              inviteeEmail: email,
             }),
           ),
         );
@@ -56,8 +56,8 @@ export default function CreateWorkspaceScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -91,9 +91,6 @@ export default function CreateWorkspaceScreen() {
           />
         </ScrollView>
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }

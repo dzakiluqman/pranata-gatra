@@ -17,27 +17,32 @@ import { useSession } from '@/features/auth/hooks/useSession';
 import { signOut } from '@/features/auth/services/authService';
 import { supabase } from '@/lib/supabase/client';
 
+import { useNotificationModal } from '@/lib/notifications';
+
 import AppBottomBar, { TabKey } from './AppBottomBar';
-import NotificationModal from './NotificationModal';
 
 type AppHeaderProps = {
   headerBottomContent?: React.ReactNode;
   showBottomBar?: boolean;
   activeTab?: TabKey;
+  bottomBarOnly?: boolean;
+  children?: React.ReactNode;
 };
 
 export default function AppHeader({
   headerBottomContent,
   showBottomBar = false,
   activeTab,
+  bottomBarOnly = false,
+  children,
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useSession();
+  const { openNotificationModal, unreadCount, setUnreadCount } =
+    useNotificationModal();
 
   const [menuVisible, setMenuVisible] = useState(false);
-  const [notificationVisible, setNotificationVisible] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const fullName =
@@ -66,7 +71,7 @@ export default function AppHeader({
       }
     }
     checkNotifications();
-  }, [user]);
+  }, [user, setUnreadCount]);
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -90,83 +95,79 @@ export default function AppHeader({
     router.push('/(app)/profile');
   };
 
-  return (
-    <>
-      <LinearGradient
-        colors={COLORS.goldHeaderGradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[
-          styles.container,
-          {
-            paddingTop: insets.top + 6,
-          },
-        ]}
-      >
-        <View style={styles.content}>
-          {/* User Section (Avatar + Name) */}
-          <View style={styles.userSection}>
-            <View style={styles.avatar}>
-              <Ionicons name="person" size={22} color="#4A3B18" />
-            </View>
+  if (bottomBarOnly) {
+    return <AppBottomBar activeTab={activeTab} />;
+  }
 
-            <View style={styles.textContainer}>
-              <Text style={styles.welcome}>
-                Welcome, <Text style={styles.name}>{firstName}</Text>
-              </Text>
-              <Text style={styles.subtitle}>Let’s Get Things Done!</Text>
-            </View>
+  const headerNode = (
+    <LinearGradient
+      colors={COLORS.goldHeaderGradient}
+      start={{ x: 0, y: 0 }}
+      end={{ x: 1, y: 1 }}
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top + 6,
+        },
+      ]}
+    >
+      <View style={styles.content}>
+        {/* User Section (Avatar + Name) */}
+        <View style={styles.userSection}>
+          <View style={styles.avatar}>
+            <Ionicons name="person" size={22} color="#4A3B18" />
           </View>
 
-          {/* Action Icons: Bell + Hamburger */}
-          <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.actionButton,
-                pressed && styles.pressed,
-              ]}
-              hitSlop={10}
-              onPress={() => setNotificationVisible(true)}
-            >
-              <Ionicons
-                name="notifications-outline"
-                size={26}
-                color={COLORS.textDark}
-              />
-              {unreadCount > 0 && <View style={styles.notificationDot} />}
-            </Pressable>
-
-            <Pressable
-              style={({ pressed }) => [
-                styles.menuButton,
-                pressed && styles.pressed,
-              ]}
-              hitSlop={10}
-              onPress={() => setMenuVisible(true)}
-            >
-              <Ionicons name="menu-outline" size={30} color={COLORS.textDark} />
-            </Pressable>
+          <View style={styles.textContainer}>
+            <Text style={styles.welcome}>
+              Welcome, <Text style={styles.name}>{firstName}</Text>
+            </Text>
+            <Text style={styles.subtitle}>Let’s Get Things Done!</Text>
           </View>
         </View>
 
-        {/* Optional Header Content (e.g. Today's Progress on Dashboard) */}
-        {headerBottomContent && (
-          <View style={styles.headerBottomContainer}>
-            {headerBottomContent}
-          </View>
-        )}
-      </LinearGradient>
+        {/* Action Icons: Bell + Hamburger */}
+        <View style={styles.actions}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={10}
+            onPress={openNotificationModal}
+          >
+            <Ionicons
+              name="notifications-outline"
+              size={26}
+              color={COLORS.textDark}
+            />
+            {unreadCount > 0 && <View style={styles.notificationDot} />}
+          </Pressable>
 
-      {/* Standalone Bottom Bar if requested (for stack screens) */}
-      {showBottomBar && <AppBottomBar activeTab={activeTab} />}
+          <Pressable
+            style={({ pressed }) => [
+              styles.menuButton,
+              pressed && styles.pressed,
+            ]}
+            hitSlop={10}
+            onPress={() => setMenuVisible(true)}
+          >
+            <Ionicons name="menu-outline" size={30} color={COLORS.textDark} />
+          </Pressable>
+        </View>
+      </View>
 
-      {/* Notifications Pop-up Modal */}
-      <NotificationModal
-        visible={notificationVisible}
-        onClose={() => setNotificationVisible(false)}
-        onNotificationCountChange={setUnreadCount}
-      />
+      {/* Optional Header Content (e.g. Today's Progress on Dashboard) */}
+      {headerBottomContent && (
+        <View style={styles.headerBottomContainer}>
+          {headerBottomContent}
+        </View>
+      )}
+    </LinearGradient>
+  );
 
+  const modalsNode = (
+    <>
       {/* Profile / Menu Pop-up Modal */}
       <Modal
         visible={menuVisible}
@@ -260,9 +261,33 @@ export default function AppHeader({
       </Modal>
     </>
   );
+
+  if (children) {
+    return (
+      <View style={styles.screenWrapper}>
+        {headerNode}
+        {children}
+        {showBottomBar && <AppBottomBar activeTab={activeTab} />}
+        {modalsNode}
+      </View>
+    );
+  }
+
+  return (
+    <>
+      {headerNode}
+      {showBottomBar && <AppBottomBar activeTab={activeTab} />}
+      {modalsNode}
+    </>
+  );
 }
 
+
 const styles = StyleSheet.create({
+  screenWrapper: {
+    flex: 1,
+    backgroundColor: COLORS.bgBlack,
+  },
   container: {
     width: '100%',
     paddingHorizontal: 20,

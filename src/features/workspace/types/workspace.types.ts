@@ -3,6 +3,7 @@ export type Workspace = {
   ownerId: string;
   name: string;
   description: string | null;
+  deadline?: string | null;
   createdAt: string;
   updatedAt: string;
 };

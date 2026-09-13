@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
     borderRadius: 40,
     backgroundColor: '#121215',
     borderWidth: 1,
-    borderColor: '#2A2A30',
+    borderColor: COLORS.goldBorderSubtle,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.4,

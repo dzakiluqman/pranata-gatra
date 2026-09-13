@@ -19,7 +19,7 @@ import { useWorkspaces } from '../hooks/useWorkspaces';
 import type { Workspace } from '../types/workspace.types';
 
 export default function WorkspaceScreen() {
-  const { workspaces = [], isLoading, error, refetch } = useWorkspaces();
+  const { workspaces = [], isLoading, error, refresh } = useWorkspaces();
 
   // Separate active vs expired workspaces
   const { activeWorkspaces, expiredWorkspaces } = useMemo(() => {
@@ -98,12 +98,21 @@ export default function WorkspaceScreen() {
             refreshControl={
               <RefreshControl
                 refreshing={isLoading}
-                onRefresh={refetch}
+                onRefresh={refresh}
                 tintColor={COLORS.primaryGold}
               />
             }
             ListHeaderComponent={
               <>
+                {error && (
+                  <View style={styles.errorCard}>
+                    <Ionicons name="alert-circle-outline" size={18} color={COLORS.danger} />
+                    <Text style={styles.errorText}>
+                      {error instanceof Error ? error.message : 'Gagal memuat workspace.'}
+                    </Text>
+                  </View>
+                )}
+
                 {/* Active Workspaces Section */}
                 <View style={styles.section}>
                   <Text style={styles.sectionTitle}>Active Workspaces</Text>
@@ -289,5 +298,22 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  errorCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(229, 83, 83, 0.12)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(229, 83, 83, 0.3)',
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: COLORS.danger,
   },
 });

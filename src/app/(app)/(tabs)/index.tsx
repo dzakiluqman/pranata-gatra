@@ -309,57 +309,50 @@ export default function Dashboard() {
           />
         }
       >
-        {/* Top Section with Gold Gradient: Header + Today's Progress */}
-        <LinearGradient
-          colors={COLORS.goldHeaderGradient}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.topGradientContainer}
-        >
-          {/* AppHeader inside the top gold container */}
-          <AppHeader />
+        {/* Top Section: AppHeader with Today's Progress on Gold Gradient */}
+        <AppHeader
+          headerBottomContent={
+            <View style={styles.progressSection}>
+              <Text style={styles.progressHeading}>Today’s Progress</Text>
 
-          {/* Today's Progress Section */}
-          <View style={styles.progressSection}>
-            <Text style={styles.progressHeading}>Today’s Progress</Text>
+              {/* 3 Metric Cards */}
+              <View style={styles.cardsRow}>
+                {/* Active Tasks */}
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricNumber}>{data.activeTasks}</Text>
+                  <Text style={styles.metricLabel}>{'Tasks\nActive'}</Text>
+                </View>
 
-            {/* 3 Metric Cards */}
-            <View style={styles.cardsRow}>
-              {/* Active Tasks */}
-              <View style={styles.metricCard}>
-                <Text style={styles.metricNumber}>{data.activeTasks}</Text>
-                <Text style={styles.metricLabel}>{'Tasks\nActive'}</Text>
+                {/* Completed Tasks */}
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricNumber}>{data.completedTasks}</Text>
+                  <Text style={styles.metricLabel}>{'Tasks\nCompleted'}</Text>
+                </View>
+
+                {/* Remaining Tasks */}
+                <View style={styles.metricCard}>
+                  <Text style={styles.metricNumber}>{data.remainingTasks}</Text>
+                  <Text style={styles.metricLabel}>{'Tasks\nRemaining'}</Text>
+                </View>
               </View>
 
-              {/* Completed Tasks */}
-              <View style={styles.metricCard}>
-                <Text style={styles.metricNumber}>{data.completedTasks}</Text>
-                <Text style={styles.metricLabel}>{'Tasks\nCompleted'}</Text>
-              </View>
-
-              {/* Remaining Tasks */}
-              <View style={styles.metricCard}>
-                <Text style={styles.metricNumber}>{data.remainingTasks}</Text>
-                <Text style={styles.metricLabel}>{'Tasks\nRemaining'}</Text>
+              {/* Progress Bar */}
+              <View style={styles.progressBarTrack}>
+                <LinearGradient
+                  colors={COLORS.goldGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[
+                    styles.progressBarFill,
+                    {
+                      width: `${Math.max(progressPercentage > 0 ? progressPercentage : 15, 0)}%`,
+                    },
+                  ]}
+                />
               </View>
             </View>
-
-            {/* Progress Bar */}
-            <View style={styles.progressBarTrack}>
-              <LinearGradient
-                colors={COLORS.goldGradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: `${Math.max(progressPercentage > 0 ? progressPercentage : 15, 0)}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        </LinearGradient>
+          }
+        />
 
         {/* Black Curved Sheet */}
         <View style={styles.blackSheet}>
@@ -370,6 +363,12 @@ export default function Dashboard() {
             </View>
           ) : (
             <>
+              {error && (
+                <View style={styles.errorContainer}>
+                  <Ionicons name="alert-circle-outline" size={18} color={COLORS.danger} />
+                  <Text style={styles.errorText}>{error}</Text>
+                </View>
+              )}
               {/* Section 1: Upcoming Tasks */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Upcoming Tasks</Text>
@@ -422,7 +421,7 @@ export default function Dashboard() {
                   todaySchedules.map((schedule) => (
                     <View key={schedule.id} style={styles.schedulePill}>
                       <Text style={styles.scheduleTime}>
-                        {formatScheduleRange(schedule.start_time, schedule.end_time)}
+                        {formatScheduleRange(schedule.startTime, schedule.endTime)}
                       </Text>
                       <Text style={styles.scheduleSubject} numberOfLines={1}>
                         {schedule.subject?.name || 'Kuliah'}
@@ -691,5 +690,22 @@ const styles = StyleSheet.create({
   },
   pressed: {
     opacity: 0.75,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: 'rgba(229, 83, 83, 0.12)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(229, 83, 83, 0.3)',
+    padding: 12,
+    marginBottom: 16,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: COLORS.danger,
   },
 });

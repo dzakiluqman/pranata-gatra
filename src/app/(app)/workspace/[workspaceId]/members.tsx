@@ -20,8 +20,8 @@ export default function WorkspaceMembersPage() {
     <View style={styles.container}>
       <Stack.Screen options={{ headerShown: false }} />
 
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="workspace" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -44,9 +44,6 @@ export default function WorkspaceMembersPage() {
           <WorkspaceMembers workspaceId={workspaceId} />
         </View>
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="workspace" />
     </View>
   );
 }

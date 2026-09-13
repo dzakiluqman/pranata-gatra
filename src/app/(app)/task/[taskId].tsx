@@ -99,8 +99,8 @@ export default function TaskDetailScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="tasks" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -273,9 +273,6 @@ export default function TaskDetailScreen() {
           </ScrollView>
         )}
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="tasks" />
     </View>
   );
 }

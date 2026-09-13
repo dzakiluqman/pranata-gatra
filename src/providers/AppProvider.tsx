@@ -1,6 +1,8 @@
 import { PropsWithChildren } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { NotificationModalProvider } from '@/lib/notifications';
+
 import { AuthProvider } from './AuthProvider';
 import { QueryProvider } from './QueryProvider';
 
@@ -11,7 +13,9 @@ export function AppProvider({
     <SafeAreaProvider>
       <QueryProvider>
         <AuthProvider>
-          {children}
+          <NotificationModalProvider>
+            {children}
+          </NotificationModalProvider>
         </AuthProvider>
       </QueryProvider>
     </SafeAreaProvider>

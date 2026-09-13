@@ -95,7 +95,6 @@ export default function CreateTaskScreen() {
   const {
     workspaces = [],
     isLoading: isLoadingWorkspaces,
-    error: workspaceError,
   } = useWorkspaces();
 
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<
@@ -118,11 +117,9 @@ export default function CreateTaskScreen() {
     workspaces,
   ]);
 
-  const { subjects = [], isLoading: isLoadingSubjects } =
-    useSubjects(activeWorkspaceId);
+  const { data: subjects = [] } = useSubjects(activeWorkspaceId);
 
-  const { members: rawMembers = [], isLoading: isLoadingMembers } =
-    useWorkspaceMembers(activeWorkspaceId);
+  const { members: rawMembers = [] } = useWorkspaceMembers(activeWorkspaceId);
 
   const members = useMemo(() => {
     return rawMembers
@@ -137,8 +134,8 @@ export default function CreateTaskScreen() {
     try {
       if (isEditing && taskId) {
         await updateTaskMutation.mutateAsync({
-          taskId,
-          input: values,
+          id: taskId,
+          ...values,
         });
         Alert.alert('Sukses', 'Tugas berhasil diperbarui.');
       } else {
@@ -159,8 +156,8 @@ export default function CreateTaskScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top Header on Gold Gradient */}
-      <AppHeader />
+      {/* Top Header on Gold Gradient with Floating Bottom Bar */}
+      <AppHeader showBottomBar activeTab="tasks" />
 
       {/* Black Curved Sheet */}
       <View style={styles.blackSheet}>
@@ -231,9 +228,6 @@ export default function CreateTaskScreen() {
           </KeyboardAvoidingView>
         )}
       </View>
-
-      {/* Bottom Floating Navigation Bar */}
-      <AppHeader showBottomBar activeTab="tasks" />
     </View>
   );
 }

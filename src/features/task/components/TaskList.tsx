@@ -1,13 +1,16 @@
 import { Ionicons } from "@expo/vector-icons";
+import React from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    Pressable,
-    RefreshControl,
-    StyleSheet,
-    Text,
-    View,
+  ActivityIndicator,
+  FlatList,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
+
+import { COLORS, FONTS } from "@/constants/theme";
 
 import type { TaskWithRelations } from "../types/task.types";
 import { TaskCard } from "./TaskCard";
@@ -48,8 +51,7 @@ export function TaskList({
   if (isLoading && tasks.length === 0) {
     return (
       <View style={styles.centerState}>
-        <ActivityIndicator size="large" color="#A8D8A8" />
-
+        <ActivityIndicator size="large" color={COLORS.primaryGold} />
         <Text style={styles.stateTitle}>Memuat tugas...</Text>
       </View>
     );
@@ -59,7 +61,7 @@ export function TaskList({
     return (
       <View style={styles.centerState}>
         <View style={styles.stateIcon}>
-          <Ionicons name="cloud-offline-outline" size={28} color="#FF8A8A" />
+          <Ionicons name="cloud-offline-outline" size={28} color={COLORS.danger} />
         </View>
 
         <Text style={styles.stateTitle}>Gagal memuat tugas</Text>
@@ -70,8 +72,7 @@ export function TaskList({
 
         {onRetry ? (
           <Pressable onPress={onRetry} style={styles.retryButton}>
-            <Ionicons name="refresh-outline" size={16} color="#0A0E0A" />
-
+            <Ionicons name="refresh-outline" size={16} color={COLORS.textDark} />
             <Text style={styles.retryText}>Coba Lagi</Text>
           </Pressable>
         ) : null}
@@ -86,7 +87,7 @@ export function TaskList({
 
         <View style={styles.emptyState}>
           <View style={styles.stateIcon}>
-            <Ionicons name="checkbox-outline" size={30} color="#A8D8A8" />
+            <Ionicons name="checkbox-outline" size={30} color={COLORS.primaryGold} />
           </View>
 
           <Text style={styles.stateTitle}>{emptyTitle}</Text>
@@ -122,7 +123,7 @@ export function TaskList({
           <RefreshControl
             refreshing={isRefreshing}
             onRefresh={onRefresh}
-            tintColor="#A8D8A8"
+            tintColor={COLORS.primaryGold}
           />
         ) : undefined
       }
@@ -160,22 +161,23 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    backgroundColor: COLORS.goldSoft,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 4,
   },
   stateTitle: {
+    fontFamily: FONTS.bold,
     fontSize: 17,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    color: COLORS.textLight,
     textAlign: "center",
   },
   stateDescription: {
     maxWidth: 300,
+    fontFamily: FONTS.regular,
     fontSize: 13,
     lineHeight: 19,
-    color: "#8E998F",
+    color: COLORS.textMuted,
     textAlign: "center",
   },
   retryButton: {
@@ -185,13 +187,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "#A8D8A8",
+    backgroundColor: COLORS.primaryGold,
     marginTop: 5,
   },
   retryText: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "700",
-    color: "#0A0E0A",
+    color: COLORS.textDark,
   },
 });
 
