@@ -121,11 +121,42 @@ export function formatDisplayDateTime(date: Date | string | null | undefined): s
 }
 
 /**
+ * Day of week constants and helpers (1 = Senin, ..., 7 = Minggu).
+ */
+export interface DayOfWeekItem {
+  id: number; // 1 to 7
+  shortName: string; // Sen, Sel, Rab, ...
+  fullName: string; // Senin, Selasa, Rabu, ...
+}
+
+export const DAYS_OF_WEEK: DayOfWeekItem[] = [
+  { id: 1, shortName: 'Sen', fullName: 'Senin' },
+  { id: 2, shortName: 'Sel', fullName: 'Selasa' },
+  { id: 3, shortName: 'Rab', fullName: 'Rabu' },
+  { id: 4, shortName: 'Kam', fullName: 'Kamis' },
+  { id: 5, shortName: 'Jum', fullName: 'Jumat' },
+  { id: 6, shortName: 'Sab', fullName: 'Sabtu' },
+  { id: 7, shortName: 'Min', fullName: 'Minggu' },
+];
+
+/**
+ * Gets day of week name from date (e.g. "Senin").
+ */
+export function getDayName(date: Date | string | null | undefined): string {
+  if (!date) return '';
+  const d = typeof date === 'string' ? parseLocalDate(date) : date;
+  if (!d || isNaN(d.getTime())) return '';
+  return new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(d);
+}
+
+/**
  * Combines a date (Date or "YYYY-MM-DD") and a time (Date or "HH:mm") into a single Date.
+ * If timeInput is not provided, defaults to 23:59 for deadlines or preserves existing time.
  */
 export function combineDateAndTime(
   dateInput: Date | string,
-  timeInput?: Date | string | null
+  timeInput?: Date | string | null,
+  defaultToEndOfDay = false
 ): Date {
   const d = typeof dateInput === 'string' ? parseLocalDate(dateInput) ?? new Date() : new Date(dateInput);
 
@@ -137,7 +168,10 @@ export function combineDateAndTime(
     } else if (timeInput instanceof Date && !isNaN(timeInput.getTime())) {
       d.setHours(timeInput.getHours(), timeInput.getMinutes(), 0, 0);
     }
+  } else if (defaultToEndOfDay) {
+    d.setHours(23, 59, 0, 0);
   }
 
   return d;
 }
+

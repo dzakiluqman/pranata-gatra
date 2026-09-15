@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   RefreshControl,
@@ -9,6 +9,8 @@ import {
   Text,
   View,
 } from 'react-native';
+
+import { useQuery } from '@tanstack/react-query';
 
 import AppHeader from '@/components/navigation/AppHeader';
 import { COLORS, FONTS } from '@/constants/theme';
@@ -39,15 +41,15 @@ function formatTime(time: string | null) {
 }
 
 export default function ScheduleScreen() {
-  const [schedules, setSchedules] = useState<Schedule[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadSchedules = useCallback(async () => {
-    try {
-      setError(null);
-
+  const {
+    data: schedules = [],
+    isLoading: loading,
+    isRefetching: refreshing,
+    error: queryError,
+    refetch,
+  } = useQuery({
+    queryKey: ['schedules', 'all-user'],
+    queryFn: async (): Promise<Schedule[]> => {
       const {
         data: { user },
         error: userError,
@@ -78,8 +80,7 @@ export default function ScheduleScreen() {
       );
 
       if (workspaceIds.length === 0) {
-        setSchedules([]);
-        return;
+        return [];
       }
 
       const { data, error: schedulesError } = await supabase
@@ -114,7 +115,7 @@ export default function ScheduleScreen() {
 
       if (schedulesError) throw schedulesError;
 
-      const normalized: Schedule[] = (data ?? []).map((item: any) => ({
+      return (data ?? []).map((item: any) => ({
         id: item.id,
         subjectId: item.subject_id,
         workspaceId: item.workspace_id,
@@ -139,16 +140,15 @@ export default function ScheduleScreen() {
             }
           : undefined,
       }));
+    },
+  });
 
-      setSchedules(normalized);
-    } catch (err) {
-      console.error('[Schedule] Failed to load:', err);
-      setError(err instanceof Error ? err.message : 'Gagal memuat jadwal.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
+  const error = queryError instanceof Error ? queryError.message : null;
+
+  const loadSchedules = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
 
   useFocusEffect(
     useCallback(() => {
@@ -196,7 +196,6 @@ export default function ScheduleScreen() {
   }, [schedules]);
 
   const handleRefresh = useCallback(() => {
-    setRefreshing(true);
     loadSchedules();
   }, [loadSchedules]);
 

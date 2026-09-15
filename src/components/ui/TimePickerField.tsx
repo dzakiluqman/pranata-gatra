@@ -30,6 +30,8 @@ export interface TimePickerFieldProps {
   style?: StyleProp<ViewStyle>;
   required?: boolean;
   is24Hour?: boolean;
+  clearable?: boolean;
+  onClear?: () => void;
 }
 
 export function TimePickerField({
@@ -42,6 +44,8 @@ export function TimePickerField({
   style,
   required = false,
   is24Hour = true,
+  clearable = false,
+  onClear,
 }: TimePickerFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -110,12 +114,29 @@ export function TimePickerField({
           </Text>
         </View>
 
-        <Ionicons
-          name="chevron-down"
-          size={16}
-          color={COLORS.goldText}
-          style={styles.chevron}
-        />
+        {clearable && Boolean(value) && onClear ? (
+          <Pressable
+            hitSlop={8}
+            onPress={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            style={styles.clearBtn}
+          >
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={COLORS.goldText}
+            />
+          </Pressable>
+        ) : (
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={COLORS.goldText}
+            style={styles.chevron}
+          />
+        )}
       </Pressable>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -238,6 +259,10 @@ const styles = StyleSheet.create({
   chevron: {
     marginLeft: 8,
     opacity: 0.7,
+  },
+  clearBtn: {
+    marginLeft: 8,
+    padding: 2,
   },
   errorText: {
     fontFamily: FONTS.regular,

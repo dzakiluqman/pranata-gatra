@@ -436,7 +436,7 @@ export const workspaceMemberService = {
     return ((data ?? []) as InvitationRow[]).map(mapInvitation);
   },
 
-  async acceptInvitation(token: string): Promise<void> {
+  async acceptInvitation(invitationId: string): Promise<void> {
     const {
       data: { user },
       error: userError,
@@ -450,16 +450,98 @@ export const workspaceMemberService = {
       throw new Error("User is not authenticated.");
     }
 
-    const { error } = await supabase.rpc("accept_workspace_invitation", {
-      p_invitation_id: token,
-    });
+    // 1. Coba panggil RPC accept_workspace_invitation
+    let rpcSucceeded = false;
+    try {
+      const { data, error } = await supabase.rpc(
+        "accept_workspace_invitation",
+        {
+          p_invitation_id: invitationId,
+        },
+      );
 
-    if (error) {
-      throw new Error(error.message);
+      if (!error && (data === null || data?.success !== false)) {
+        rpcSucceeded = true;
+        return;
+      }
+      if (error && !error.message.includes("Could not find the function")) {
+        // Jika RPC ada tapi melempar error spesifik
+        throw new Error(error.message);
+      }
+    } catch (rpcErr: any) {
+      if (
+        rpcErr?.message &&
+        !rpcErr.message.includes("Could not find the function") &&
+        !rpcErr.message.includes("function public.accept_workspace_invitation")
+      ) {
+        throw rpcErr;
+      }
+    }
+
+    // 2. Fallback: Langsung lakukan insert ke workspace_members dan update workspace_invitations
+    if (!rpcSucceeded) {
+      const { data: invitation, error: fetchError } = await supabase
+        .from("workspace_invitations")
+        .select("workspace_id, role, invitee_email")
+        .eq("id", invitationId)
+        .single();
+
+      if (fetchError || !invitation) {
+        throw new Error(
+          fetchError?.message || "Data undangan tidak ditemukan.",
+        );
+      }
+
+      // Masukkan member
+      const { error: memberError } = await supabase
+        .from("workspace_members")
+        .insert({
+          workspace_id: invitation.workspace_id,
+          user_id: user.id,
+          role: invitation.role || "member",
+        });
+
+      if (
+        memberError &&
+        !memberError.message.toLowerCase().includes("unique") &&
+        !memberError.message.toLowerCase().includes("duplicate")
+      ) {
+        throw new Error(memberError.message);
+      }
+
+      // Update status undangan
+      const { error: updateError } = await supabase
+        .from("workspace_invitations")
+        .update({
+          status: "accepted",
+          accepted_at: new Date().toISOString(),
+        })
+        .eq("id", invitationId);
+
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
     }
   },
 
   async declineInvitation(invitationId: string): Promise<void> {
+    // 1. Coba panggil RPC decline_workspace_invitation
+    try {
+      const { data, error } = await supabase.rpc(
+        "decline_workspace_invitation",
+        {
+          p_invitation_id: invitationId,
+        },
+      );
+
+      if (!error && (data === null || data?.success !== false)) {
+        return;
+      }
+    } catch {
+      // lanjut ke fallback direct update
+    }
+
+    // 2. Fallback direct update
     const { error } = await supabase
       .from("workspace_invitations")
       .update({
@@ -485,3 +567,4 @@ export const workspaceMemberService = {
     }
   },
 };
+

@@ -1,10 +1,12 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useLocalSearchParams } from "expo-router";
+import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import ScheduleForm from "../../../../../features/schedule/components/ScheduleForm";
+import { COLORS, FONTS } from "@/constants/theme";
+import ScheduleForm from "@/features/schedule/components/ScheduleForm";
 
 export default function ScheduleScreen() {
   const insets = useSafeAreaInsets();
@@ -30,8 +32,7 @@ export default function ScheduleScreen() {
     return (
       <View style={styles.container}>
         <LinearGradient
-          colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-          locations={[0, 0.3, 0.65, 1]}
+          colors={[COLORS.bgBlack, '#131316', COLORS.bgBlack]}
           style={StyleSheet.absoluteFill}
         />
 
@@ -44,15 +45,15 @@ export default function ScheduleScreen() {
           ]}
         >
           <Pressable style={styles.backButton} onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
+            <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
           </Pressable>
-          <Text style={styles.title}>Schedule</Text>
+          <Text style={styles.title}>Atur Jadwal</Text>
           <View style={styles.spacer} />
         </View>
 
         <View style={styles.errorContainer}>
-          <Ionicons name="alert-circle-outline" size={40} color="#FF8A8A" />
-          <Text style={styles.errorText}>Data tidak lengkap</Text>
+          <Ionicons name="alert-circle-outline" size={40} color={COLORS.danger} />
+          <Text style={styles.errorText}>Data subject tidak lengkap</Text>
         </View>
       </View>
     );
@@ -61,8 +62,8 @@ export default function ScheduleScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#060A08"]}
-        locations={[0, 0.3, 0.65, 1]}
+        colors={[COLORS.bgBlack, '#131316', COLORS.bgBlack]}
+        locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
 
@@ -75,9 +76,11 @@ export default function ScheduleScreen() {
         ]}
       >
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={22} color="#F5F7F3" />
+          <Ionicons name="chevron-back" size={22} color={COLORS.goldText} />
         </Pressable>
-        <Text style={styles.title}>Schedule</Text>
+        <Text style={styles.title}>
+          {scheduleId ? "Edit Jadwal" : "Tambah Jadwal"}
+        </Text>
         <View style={styles.spacer} />
       </View>
 
@@ -101,7 +104,7 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#060A08",
+    backgroundColor: COLORS.bgBlack,
   },
   header: {
     height: 56,
@@ -110,7 +113,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.06)",
+    borderBottomColor: COLORS.borderSubtle,
   },
   backButton: {
     width: 40,
@@ -118,12 +121,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: COLORS.bgCard,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
   },
   title: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 17,
+    color: COLORS.textLight,
   },
   spacer: {
     width: 40,
@@ -135,9 +140,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   errorText: {
-    fontSize: 16,
-    color: "#FF8A8A",
-    fontWeight: "600",
+    fontFamily: FONTS.semiBold,
+    fontSize: 15,
+    color: COLORS.danger,
   },
 });
-

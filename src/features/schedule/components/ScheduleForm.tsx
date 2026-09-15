@@ -1,3 +1,4 @@
+import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -6,9 +7,12 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
 } from "react-native";
+
+import { DatePickerField, TimePickerField } from "@/components/ui";
+import { COLORS, FONTS } from "@/constants/theme";
+import { parseLocalDate } from "@/lib/datetime/dateUtils";
 import { useSchedule } from "../hooks/useSchedule";
 import { scheduleService } from "../services/scheduleService";
 import type { RecurrenceUnit } from "../types/schedule.types";
@@ -100,6 +104,16 @@ export default function ScheduleForm({
       return;
     }
 
+    if (recurrenceEnabled && recurrenceEndDate) {
+      if (recurrenceEndDate < startDate) {
+        Alert.alert(
+          "Validasi",
+          "Tanggal berakhir tidak boleh mendahului tanggal mulai.",
+        );
+        return;
+      }
+    }
+
     try {
       if (isEditing && scheduleId) {
         await updateSchedule({
@@ -132,15 +146,18 @@ export default function ScheduleForm({
       onSuccess?.();
     } catch (error) {
       console.error("Failed to save schedule:", error);
-      Alert.alert("Gagal", "Schedule gagal disimpan.");
+      Alert.alert(
+        "Gagal",
+        error instanceof Error ? error.message : "Schedule gagal disimpan.",
+      );
     }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#A8D8A8" />
-        <Text style={styles.loadingText}>Memuat schedule...</Text>
+        <ActivityIndicator size="large" color={COLORS.primaryGold} />
+        <Text style={styles.loadingText}>Memuat jadwal...</Text>
       </View>
     );
   }
@@ -149,46 +166,42 @@ export default function ScheduleForm({
     <ScrollView
       contentContainerStyle={styles.container}
       keyboardShouldPersistTaps="handled"
+      showsVerticalScrollIndicator={false}
     >
       <Text style={styles.title}>
-        {isEditing ? "Edit Schedule" : "Tambah Schedule"}
+        {isEditing ? "Edit Jadwal" : "Tambah Jadwal Baru"}
       </Text>
-      <Text style={styles.subtitle}>Atur jadwal untuk subject ini.</Text>
+      <Text style={styles.subtitle}>
+        Tentukan hari dan jam pertemuan untuk subject ini.
+      </Text>
 
-      <View style={styles.field}>
-        <Text style={styles.label}>Tanggal mulai</Text>
-        <TextInput
-          value={startDate}
-          onChangeText={setStartDate}
-          placeholder={startDate}
-          placeholderTextColor="#555C55"
-          style={styles.input}
-          autoCapitalize="none"
-        />
-      </View>
+      <DatePickerField
+        label="Tanggal Mulai"
+        value={startDate}
+        onChange={(_, dateStr) => setStartDate(dateStr)}
+        placeholder="Pilih tanggal mulai"
+        showWeekday={true}
+        required
+      />
 
       <View style={styles.timeRow}>
         <View style={styles.timeField}>
-          <Text style={styles.label}>Mulai</Text>
-          <TextInput
+          <TimePickerField
+            label="Jam Mulai"
             value={startTime}
-            onChangeText={setStartTime}
-            placeholder={startTime}
-            placeholderTextColor="#555C55"
-            style={styles.input}
-            keyboardType="numbers-and-punctuation"
+            onChange={(_, timeStr) => setStartTime(timeStr)}
+            placeholder="08:00"
+            required
           />
         </View>
 
         <View style={styles.timeField}>
-          <Text style={styles.label}>Selesai</Text>
-          <TextInput
+          <TimePickerField
+            label="Jam Selesai"
             value={endTime}
-            onChangeText={setEndTime}
-            placeholder={endTime}
-            placeholderTextColor="#555C55"
-            style={styles.input}
-            keyboardType="numbers-and-punctuation"
+            onChange={(_, timeStr) => setEndTime(timeStr)}
+            placeholder="10:00"
+            required
           />
         </View>
       </View>
@@ -203,19 +216,16 @@ export default function ScheduleForm({
       />
 
       {recurrenceEnabled && (
-        <View style={styles.field}>
-          <Text style={styles.label}>
-            Berakhir pada
-            <Text style={styles.optional}> (opsional)</Text>
-          </Text>
-          <TextInput
-            value={recurrenceEndDate}
-            onChangeText={setRecurrenceEndDate}
-            placeholder={recurrenceEndDate || "YYYY-MM-DD"}
-            placeholderTextColor="#555C55"
-            style={styles.input}
-          />
-        </View>
+        <DatePickerField
+          label="Berakhir pada (opsional)"
+          value={recurrenceEndDate || null}
+          onChange={(_, dateStr) => setRecurrenceEndDate(dateStr)}
+          placeholder="Pilih tanggal berakhir"
+          minimumDate={parseLocalDate(startDate) ?? undefined}
+          showWeekday={true}
+          clearable={true}
+          onClear={() => setRecurrenceEndDate("")}
+        />
       )}
 
       <Pressable
@@ -223,13 +233,20 @@ export default function ScheduleForm({
         onPress={handleSubmit}
         style={[styles.button, isSubmitting && styles.buttonDisabled]}
       >
-        {isSubmitting ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.buttonText}>
-            {isEditing ? "Simpan Perubahan" : "Simpan Schedule"}
-          </Text>
-        )}
+        <LinearGradient
+          colors={COLORS.goldGradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.buttonGradient}
+        >
+          {isSubmitting ? (
+            <ActivityIndicator color={COLORS.textDark} />
+          ) : (
+            <Text style={styles.buttonText}>
+              {isEditing ? "Simpan Perubahan" : "Simpan Jadwal"}
+            </Text>
+          )}
+        </LinearGradient>
       </Pressable>
     </ScrollView>
   );
@@ -247,63 +264,45 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loadingText: {
+    fontFamily: FONTS.medium,
     fontSize: 13,
-    color: "#8E998F",
+    color: COLORS.textMuted,
   },
   title: {
-    color: "#F5F7F3",
-    fontSize: 25,
-    fontWeight: "800",
+    fontFamily: FONTS.bold,
+    color: COLORS.textLight,
+    fontSize: 22,
   },
   subtitle: {
-    marginTop: -12,
-    color: "#7F867F",
+    fontFamily: FONTS.regular,
+    marginTop: -10,
+    color: COLORS.textMuted,
     fontSize: 13,
-  },
-  field: {
-    gap: 8,
-  },
-  label: {
-    color: "#A2A8A1",
-    fontSize: 12,
-    fontWeight: "600",
-  },
-  optional: {
-    color: "#666D66",
-    fontWeight: "400",
-  },
-  input: {
-    height: 50,
-    paddingHorizontal: 15,
-    borderRadius: 13,
-    backgroundColor: "#151A15",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.07)",
-    color: "#F5F7F3",
-    fontSize: 14,
   },
   timeRow: {
     flexDirection: "row",
-    gap: 10,
+    gap: 12,
   },
   timeField: {
     flex: 1,
-    gap: 8,
   },
   button: {
+    marginTop: 10,
+    borderRadius: 14,
+    overflow: "hidden",
+  },
+  buttonGradient: {
     minHeight: 52,
-    marginTop: 4,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 15,
-    backgroundColor: "#5C8F65",
+    borderRadius: 14,
   },
   buttonDisabled: {
     opacity: 0.55,
   },
   buttonText: {
-    color: "#FFFFFF",
+    fontFamily: FONTS.bold,
+    color: COLORS.textDark,
     fontSize: 15,
-    fontWeight: "700",
   },
 });

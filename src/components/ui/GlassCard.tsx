@@ -2,11 +2,11 @@ import { StyleSheet, View, ViewProps, ViewStyle } from 'react-native';
 
 import { COLORS } from '@/constants/theme';
 
-interface GlassCardProps extends ViewProps {
+export interface GlassCardProps extends ViewProps {
   style?: ViewStyle | ViewStyle[];
 }
 
-export default function GlassCard({
+export function GlassCard({
   children,
   style,
   ...props
@@ -28,3 +28,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
 });
+
+export default GlassCard;
+

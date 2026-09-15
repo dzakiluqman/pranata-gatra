@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,9 +13,12 @@ import {
   View,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 
+import { COLORS, FONTS } from "@/constants/theme";
 import type { Schedule } from "@/features/schedule";
 import { formatRecurrence, useTodaySchedules } from "@/features/schedule";
+import { workspaceMemberService } from "@/features/workspace/services/workspaceMemberService";
 import { supabase } from "@/lib/supabase";
 
 type WorkspaceInvitation = {
@@ -52,6 +55,7 @@ function formatScheduleRange(start: string, end: string) {
 
 export default function NotificationsScreen() {
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -212,28 +216,17 @@ export default function NotificationsScreen() {
 
     try {
       setProcessingId(invitation.id);
-
-      const { data, error } = await supabase.rpc(
-        "accept_workspace_invitation",
-        {
-          p_invitation_id: invitation.id,
-        },
-      );
-
-      if (error) {
-        throw error;
-      }
-
-      if (data === false) {
-        throw new Error("Invitation tidak dapat diterima.");
-      }
+      await workspaceMemberService.acceptInvitation(invitation.id);
 
       setInvitations((current) =>
         current.filter((item) => item.id !== invitation.id),
       );
 
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["my-workspace-invitations"] });
+
       Alert.alert(
-        "Invitation diterima",
+        "Invitation Diterima",
         `Kamu sekarang menjadi member workspace "${invitation.workspace?.name ?? "Workspace"}".`,
       );
     } catch (error) {
@@ -256,7 +249,7 @@ export default function NotificationsScreen() {
     }
 
     Alert.alert(
-      "Tolak invitation?",
+      "Tolak Invitation?",
       `Kamu yakin ingin menolak invitation ke "${invitation.workspace?.name ?? "Workspace"}"?`,
       [
         {
@@ -269,25 +262,16 @@ export default function NotificationsScreen() {
           onPress: async () => {
             try {
               setProcessingId(invitation.id);
-
-              const { error } = await supabase
-                .from("workspace_invitations")
-                .update({
-                  status: "declined",
-                })
-                .eq("id", invitation.id)
-                .eq("status", "pending");
-
-              if (error) {
-                throw error;
-              }
+              await workspaceMemberService.declineInvitation(invitation.id);
 
               setInvitations((current) =>
                 current.filter((item) => item.id !== invitation.id),
               );
 
+              queryClient.invalidateQueries({ queryKey: ["my-workspace-invitations"] });
+
               Alert.alert(
-                "Invitation ditolak",
+                "Invitation Ditolak",
                 "Invitation workspace telah ditolak.",
               );
             } catch (error) {
@@ -320,11 +304,11 @@ export default function NotificationsScreen() {
       <View style={styles.card}>
         <View style={styles.cardTop}>
           <View style={styles.invitationIcon}>
-            <Ionicons name="people-outline" size={25} color="#A8D8A8" />
+            <Ionicons name="people-outline" size={24} color={COLORS.goldText} />
           </View>
 
           <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Workspace Invitation</Text>
+            <Text style={styles.cardTitle}>Undangan Workspace</Text>
 
             <Text style={styles.cardMessage}>
               <Text style={styles.inviterName}>{inviterName}</Text> mengundang
@@ -336,12 +320,11 @@ export default function NotificationsScreen() {
 
         <View style={styles.workspaceInfo}>
           <View style={styles.workspaceInfoIcon}>
-            <Ionicons name="briefcase-outline" size={17} color="#B6C7B6" />
+            <Ionicons name="briefcase-outline" size={16} color={COLORS.goldText} />
           </View>
 
           <View style={styles.workspaceInfoContent}>
             <Text style={styles.workspaceInfoName}>{workspaceName}</Text>
-
             <Text style={styles.workspaceRole}>Role: {item.role}</Text>
           </View>
         </View>
@@ -368,15 +351,21 @@ export default function NotificationsScreen() {
               isProcessing && styles.disabled,
             ]}
           >
-            {isProcessing ? (
-              <ActivityIndicator size="small" color="#0A0E0A" />
-            ) : (
-              <>
-                <Ionicons name="checkmark" size={18} color="#0A0E0A" />
-
-                <Text style={styles.acceptText}>Terima</Text>
-              </>
-            )}
+            <LinearGradient
+              colors={COLORS.goldGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={styles.acceptButtonGradient}
+            >
+              {isProcessing ? (
+                <ActivityIndicator size="small" color={COLORS.textDark} />
+              ) : (
+                <>
+                  <Ionicons name="checkmark" size={17} color={COLORS.textDark} />
+                  <Text style={styles.acceptText}>Terima</Text>
+                </>
+              )}
+            </LinearGradient>
           </Pressable>
         </View>
       </View>
@@ -396,7 +385,7 @@ export default function NotificationsScreen() {
     return (
       <View key={schedule.id} style={styles.scheduleNotification}>
         <View style={styles.scheduleIcon}>
-          <Ionicons name="calendar-outline" size={22} color="#A8D8A8" />
+          <Ionicons name="calendar-outline" size={22} color={COLORS.goldText} />
         </View>
 
         <View style={styles.scheduleContent}>
@@ -420,7 +409,7 @@ export default function NotificationsScreen() {
                 <Ionicons
                   name="notifications-outline"
                   size={11}
-                  color="#A8D8A8"
+                  color={COLORS.goldText}
                 />
 
                 <Text style={styles.reminderText}>
@@ -432,8 +421,7 @@ export default function NotificationsScreen() {
 
           {schedule.subject?.room && (
             <View style={styles.roomRow}>
-              <Ionicons name="location-outline" size={12} color="#7F8A80" />
-
+              <Ionicons name="location-outline" size={12} color={COLORS.textMuted} />
               <Text style={styles.roomText}>{schedule.subject.room}</Text>
             </View>
           )}
@@ -446,12 +434,11 @@ export default function NotificationsScreen() {
     return (
       <View style={[styles.safeArea, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
         <LinearGradient
-          colors={["#0D1610", "#182A1C", "#060A08"]}
+          colors={[COLORS.bgBlack, '#131316', COLORS.bgBlack]}
           style={StyleSheet.absoluteFill}
         />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#A8D8A8" />
-
+          <ActivityIndicator size="large" color={COLORS.primaryGold} />
           <Text style={styles.loadingText}>Memuat notifikasi...</Text>
         </View>
       </View>
@@ -463,20 +450,16 @@ export default function NotificationsScreen() {
   return (
     <View style={[styles.safeArea, { paddingTop: insets.top }]}>
       <LinearGradient
-        colors={["#0D1610", "#182A1C", "#09100C", "#142519", "#060A08"]}
-        locations={[0, 0.3, 0.55, 0.8, 1]}
-        start={{ x: -0.5, y: 0 }}
-        end={{ x: 1.5, y: 1 }}
+        colors={[COLORS.bgBlack, '#131316', COLORS.bgBlack]}
+        locations={[0, 0.45, 1]}
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.container}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.eyebrow}>NOTIFICATIONS</Text>
-
+            <Text style={styles.eyebrow}>NOTIFIKASI</Text>
             <Text style={styles.title}>Notifikasi</Text>
-
-            <Text style={styles.subtitle}>Invitation dan jadwal hari ini.</Text>
+            <Text style={styles.subtitle}>Undangan dan jadwal pertemuan hari ini.</Text>
           </View>
 
           {totalNotifications > 0 && (
@@ -495,7 +478,7 @@ export default function NotificationsScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor="#A8D8A8"
+              tintColor={COLORS.primaryGold}
             />
           }
           contentContainerStyle={[
@@ -507,8 +490,7 @@ export default function NotificationsScreen() {
               <View style={styles.scheduleSection}>
                 <View style={styles.sectionHeader}>
                   <View>
-                    <Text style={styles.sectionEyebrow}>TODAY</Text>
-
+                    <Text style={styles.sectionEyebrow}>HARI INI</Text>
                     <Text style={styles.sectionTitle}>Jadwal Hari Ini</Text>
                   </View>
 
@@ -532,14 +514,14 @@ export default function NotificationsScreen() {
                   <Ionicons
                     name="notifications-off-outline"
                     size={34}
-                    color="#A8D8A8"
+                    color={COLORS.primaryGold}
                   />
                 </View>
 
                 <Text style={styles.emptyTitle}>Tidak ada notifikasi</Text>
 
                 <Text style={styles.emptyDescription}>
-                  Saat ada invitation workspace atau jadwal hari ini, informasi
+                  Saat ada undangan workspace atau jadwal hari ini, informasi
                   tersebut akan muncul di sini.
                 </Text>
               </View>
@@ -554,7 +536,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0A0E0A",
+    backgroundColor: COLORS.bgBlack,
   },
 
   container: {
@@ -571,40 +553,41 @@ const styles = StyleSheet.create({
   },
 
   eyebrow: {
+    fontFamily: FONTS.bold,
     fontSize: 10,
-    fontWeight: "800",
     letterSpacing: 1.5,
-    color: "#8DB88D",
-    marginBottom: 5,
+    color: COLORS.goldText,
+    marginBottom: 4,
   },
 
   title: {
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 28,
+    lineHeight: 34,
+    color: COLORS.textLight,
   },
 
   subtitle: {
-    marginTop: 5,
+    fontFamily: FONTS.regular,
+    marginTop: 4,
     fontSize: 13,
-    color: "rgba(245, 247, 243, 0.55)",
+    color: COLORS.textMuted,
   },
 
   badge: {
-    minWidth: 34,
-    height: 34,
-    paddingHorizontal: 10,
-    borderRadius: 17,
+    minWidth: 32,
+    height: 32,
+    paddingHorizontal: 8,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#A8D8A8",
+    backgroundColor: COLORS.primaryGold,
   },
 
   badgeText: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "800",
-    color: "#0A0E0A",
+    color: COLORS.textDark,
   },
 
   listContent: {
@@ -624,35 +607,35 @@ const styles = StyleSheet.create({
   },
 
   sectionEyebrow: {
+    fontFamily: FONTS.bold,
     fontSize: 9,
-    fontWeight: "800",
     letterSpacing: 1.4,
-    color: "#8DB88D",
+    color: COLORS.goldText,
     marginBottom: 3,
   },
 
   sectionTitle: {
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    fontSize: 18,
+    color: COLORS.textLight,
   },
 
   sectionBadge: {
-    minWidth: 28,
-    height: 28,
-    paddingHorizontal: 8,
-    borderRadius: 14,
+    minWidth: 26,
+    height: 26,
+    paddingHorizontal: 7,
+    borderRadius: 13,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.10)",
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.15)",
+    borderColor: COLORS.goldBorderSubtle,
   },
 
   sectionBadgeText: {
+    fontFamily: FONTS.bold,
     fontSize: 11,
-    fontWeight: "800",
-    color: "#A8D8A8",
+    color: COLORS.goldText,
   },
 
   scheduleList: {
@@ -663,20 +646,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     padding: 15,
     borderRadius: 18,
-    backgroundColor: "#151A15",
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
+    borderColor: COLORS.borderCard,
   },
 
   scheduleIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.12)",
+    borderColor: COLORS.goldBorderSubtle,
   },
 
   scheduleContent: {
@@ -693,27 +676,28 @@ const styles = StyleSheet.create({
 
   scheduleTitle: {
     flex: 1,
+    fontFamily: FONTS.bold,
     fontSize: 14,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    color: COLORS.textLight,
   },
 
   scheduleTime: {
+    fontFamily: FONTS.bold,
     fontSize: 11,
-    fontWeight: "700",
-    color: "#B9DAB9",
+    color: COLORS.goldText,
   },
 
   scheduleMetaRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    marginTop: 7,
+    marginTop: 6,
   },
 
   scheduleRecurrence: {
-    fontSize: 10,
-    color: "#A2AFA1",
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
 
   reminderBadge: {
@@ -721,15 +705,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
     paddingHorizontal: 7,
-    paddingVertical: 3,
-    borderRadius: 7,
-    backgroundColor: "rgba(168, 216, 168, 0.07)",
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: COLORS.goldSoft,
   },
 
   reminderText: {
+    fontFamily: FONTS.medium,
     fontSize: 9,
-    color: "#A8D8A8",
-    fontWeight: "600",
+    color: COLORS.goldText,
   },
 
   roomRow: {
@@ -740,17 +724,18 @@ const styles = StyleSheet.create({
   },
 
   roomText: {
-    fontSize: 10,
-    color: "#7F8A80",
+    fontFamily: FONTS.regular,
+    fontSize: 11,
+    color: COLORS.textMuted,
   },
 
   card: {
-    padding: 17,
+    padding: 16,
     marginBottom: 14,
-    borderRadius: 20,
-    backgroundColor: "#151A15",
+    borderRadius: 18,
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.07)",
+    borderColor: COLORS.borderCard,
   },
 
   cardTop: {
@@ -759,60 +744,61 @@ const styles = StyleSheet.create({
   },
 
   invitationIcon: {
-    width: 50,
-    height: 50,
-    borderRadius: 16,
+    width: 46,
+    height: 46,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.10)",
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.15)",
+    borderColor: COLORS.goldBorderSubtle,
   },
 
   cardContent: {
     flex: 1,
-    marginLeft: 13,
+    marginLeft: 12,
   },
 
   cardTitle: {
+    fontFamily: FONTS.bold,
     fontSize: 15,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    color: COLORS.textLight,
   },
 
   cardMessage: {
-    marginTop: 5,
+    fontFamily: FONTS.regular,
+    marginTop: 4,
     fontSize: 13,
-    lineHeight: 20,
-    color: "rgba(245, 247, 243, 0.62)",
+    lineHeight: 19,
+    color: COLORS.textMuted,
   },
 
   inviterName: {
-    fontWeight: "700",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    color: COLORS.textLight,
   },
 
   workspaceName: {
-    fontWeight: "700",
-    color: "#B9DAB9",
+    fontFamily: FONTS.bold,
+    color: COLORS.goldText,
   },
 
   workspaceInfo: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 16,
-    padding: 12,
-    borderRadius: 14,
-    backgroundColor: "rgba(255, 255, 255, 0.035)",
+    marginTop: 14,
+    padding: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.03)",
   },
 
   workspaceInfoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    backgroundColor: COLORS.goldSoft,
   },
 
   workspaceInfoContent: {
@@ -821,60 +807,65 @@ const styles = StyleSheet.create({
   },
 
   workspaceInfoName: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "700",
-    color: "#F5F7F3",
+    color: COLORS.textLight,
   },
 
   workspaceRole: {
-    marginTop: 3,
+    fontFamily: FONTS.regular,
+    marginTop: 2,
     fontSize: 11,
-    color: "rgba(245, 247, 243, 0.45)",
+    color: COLORS.textMuted,
     textTransform: "capitalize",
   },
 
   actions: {
     flexDirection: "row",
     gap: 10,
-    marginTop: 15,
+    marginTop: 14,
   },
 
   declineButton: {
     flex: 1,
-    height: 46,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 13,
+    borderRadius: 12,
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: COLORS.borderCard,
   },
 
   declineText: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "700",
-    color: "#BFC5BF",
+    color: COLORS.textMuted,
   },
 
   acceptButton: {
     flex: 1,
-    height: 46,
+    borderRadius: 12,
+    overflow: "hidden",
+  },
+
+  acceptButtonGradient: {
+    height: 44,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    borderRadius: 13,
-    backgroundColor: "#A8D8A8",
+    borderRadius: 12,
   },
 
   acceptText: {
+    fontFamily: FONTS.bold,
     fontSize: 13,
-    fontWeight: "800",
-    color: "#0A0E0A",
+    color: COLORS.textDark,
   },
 
   pressed: {
-    opacity: 0.7,
+    opacity: 0.75,
   },
 
   disabled: {
@@ -885,12 +876,13 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
   },
 
   loadingText: {
-    marginTop: 12,
-    fontSize: 14,
-    color: "rgba(245, 247, 243, 0.55)",
+    fontFamily: FONTS.medium,
+    fontSize: 13,
+    color: COLORS.textMuted,
   },
 
   emptyState: {
@@ -898,34 +890,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 30,
-    paddingVertical: 60,
+    paddingVertical: 50,
   },
 
   emptyIcon: {
-    width: 76,
-    height: 76,
-    borderRadius: 25,
+    width: 68,
+    height: 68,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(168, 216, 168, 0.08)",
+    backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
-    borderColor: "rgba(168, 216, 168, 0.12)",
+    borderColor: COLORS.goldBorderSubtle,
   },
 
   emptyTitle: {
-    marginTop: 18,
-    fontSize: 19,
-    fontWeight: "800",
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    marginTop: 16,
+    fontSize: 17,
+    color: COLORS.textLight,
     textAlign: "center",
   },
 
   emptyDescription: {
-    maxWidth: 320,
-    marginTop: 8,
+    fontFamily: FONTS.regular,
+    maxWidth: 300,
+    marginTop: 6,
     fontSize: 13,
-    lineHeight: 20,
-    color: "rgba(245, 247, 243, 0.48)",
+    lineHeight: 19,
+    color: COLORS.textMuted,
     textAlign: "center",
   },
 });

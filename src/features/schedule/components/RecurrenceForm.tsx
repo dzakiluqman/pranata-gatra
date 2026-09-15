@@ -7,6 +7,7 @@ import {
   View,
 } from "react-native";
 
+import { COLORS, FONTS } from "@/constants/theme";
 import type { RecurrenceUnit } from "../types/schedule.types";
 
 interface Props {
@@ -48,9 +49,9 @@ export default function RecurrenceForm({
     <View style={styles.container}>
       <View style={styles.row}>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>Ulangi schedule</Text>
+          <Text style={styles.title}>Ulangi jadwal</Text>
           <Text style={styles.subtitle}>
-            Schedule dapat diulang secara otomatis.
+            Jadwal dapat diulang secara berkala otomatis.
           </Text>
         </View>
 
@@ -58,10 +59,10 @@ export default function RecurrenceForm({
           value={enabled}
           onValueChange={onEnabledChange}
           trackColor={{
-            false: "#343A34",
-            true: "#5C8F65",
+            false: "#27272A",
+            true: COLORS.primaryGold,
           }}
-          thumbColor="#F5F7F3"
+          thumbColor={COLORS.textLight}
         />
       </View>
 
@@ -113,9 +114,9 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     borderRadius: 18,
-    backgroundColor: "#151A15",
+    backgroundColor: COLORS.bgCard,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: COLORS.borderCard,
   },
 
   row: {
@@ -129,14 +130,15 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    color: "#F5F7F3",
+    fontFamily: FONTS.bold,
+    color: COLORS.textLight,
     fontSize: 15,
-    fontWeight: "700",
   },
 
   subtitle: {
+    fontFamily: FONTS.regular,
     marginTop: 4,
-    color: "#7F867F",
+    color: COLORS.textMuted,
     fontSize: 12,
   },
 
@@ -145,8 +147,9 @@ const styles = StyleSheet.create({
   },
 
   label: {
+    fontFamily: FONTS.medium,
     marginBottom: 8,
-    color: "#9CA39B",
+    color: COLORS.textMuted,
     fontSize: 12,
   },
 
@@ -159,13 +162,13 @@ const styles = StyleSheet.create({
     width: 58,
     height: 46,
     borderRadius: 12,
-    backgroundColor: "#0D120D",
+    backgroundColor: COLORS.bgBlack,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    color: "#F5F7F3",
+    borderColor: COLORS.borderCard,
+    color: COLORS.textLight,
     textAlign: "center",
     fontSize: 16,
-    fontWeight: "700",
+    fontFamily: FONTS.bold,
   },
 
   units: {
@@ -180,22 +183,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: "#0D120D",
+    backgroundColor: COLORS.bgBlack,
+    borderWidth: 1,
+    borderColor: COLORS.borderCard,
+    paddingHorizontal: 6,
   },
 
   unitButtonActive: {
-    backgroundColor: "rgba(92,143,101,0.22)",
-    borderWidth: 1,
-    borderColor: "#5C8F65",
+    backgroundColor: COLORS.goldSoft,
+    borderColor: COLORS.primaryGold,
   },
 
   unitText: {
-    color: "#858C85",
+    fontFamily: FONTS.medium,
+    color: COLORS.textMuted,
     fontSize: 12,
-    fontWeight: "600",
   },
 
   unitTextActive: {
-    color: "#B8D7BD",
+    fontFamily: FONTS.bold,
+    color: COLORS.goldText,
   },
 });

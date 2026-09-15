@@ -14,7 +14,9 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS, FONTS } from '@/constants/theme';
+import { workspaceMemberService } from '@/features/workspace/services/workspaceMemberService';
 import { supabase } from '@/lib/supabase/client';
+
 
 type WorkspaceInvitation = {
   id: string;
@@ -121,32 +123,7 @@ export default function NotificationModal({
   const handleAccept = async (invitation: WorkspaceInvitation) => {
     try {
       setActionLoadingId(invitation.id);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error('User tidak ditemukan');
-
-      // Add to workspace members
-      const { error: memberError } = await supabase
-        .from('workspace_members')
-        .insert({
-          workspace_id: invitation.workspace_id,
-          user_id: user.id,
-          role: invitation.role || 'member',
-        });
-
-      if (memberError && !memberError.message.includes('unique')) {
-        throw memberError;
-      }
-
-      // Update invitation status
-      await supabase
-        .from('workspace_invitations')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', invitation.id);
+      await workspaceMemberService.acceptInvitation(invitation.id);
 
       setInvitations((prev) => prev.filter((item) => item.id !== invitation.id));
       onNotificationCountChange?.(Math.max(0, invitations.length - 1));
@@ -161,12 +138,7 @@ export default function NotificationModal({
   const handleDecline = async (invitation: WorkspaceInvitation) => {
     try {
       setActionLoadingId(invitation.id);
-      await supabase
-        .from('workspace_invitations')
-        .update({
-          status: 'rejected',
-        })
-        .eq('id', invitation.id);
+      await workspaceMemberService.declineInvitation(invitation.id);
 
       setInvitations((prev) => prev.filter((item) => item.id !== invitation.id));
       onNotificationCountChange?.(Math.max(0, invitations.length - 1));
@@ -176,6 +148,7 @@ export default function NotificationModal({
       setActionLoadingId(null);
     }
   };
+
 
   return (
     <Modal

@@ -113,30 +113,44 @@ export const scheduleService = {
   },
 
   async create(input: CreateScheduleInput): Promise<Schedule> {
+    const insertPayload: Record<string, any> = {
+      subject_id: input.subjectId,
+      workspace_id: input.workspaceId,
+      start_date: input.startDate,
+      start_time: input.startTime,
+      end_time: input.endTime,
+      recurrence_enabled: input.recurrenceEnabled ?? false,
+      recurrence_interval: input.recurrenceInterval ?? 1,
+      recurrence_unit: input.recurrenceUnit ?? "week",
+      recurrence_end_date: input.recurrenceEndDate || null,
+      reminder_enabled: input.reminderEnabled ?? false,
+      reminder_minutes: input.reminderMinutes ?? 60,
+    };
+
     const { data, error } = await supabase
       .from("subject_schedules")
-      .insert({
-        subject_id: input.subjectId,
-        workspace_id: input.workspaceId,
-        start_date: input.startDate,
-        start_time: input.startTime,
-        end_time: input.endTime,
-        recurrence_enabled: input.recurrenceEnabled ?? false,
-        recurrence_interval: input.recurrenceInterval ?? 1,
-        recurrence_unit: input.recurrenceUnit ?? "week",
-        recurrence_end_date: input.recurrenceEndDate ?? null,
-        reminder_enabled: input.reminderEnabled ?? false,
-        reminder_minutes: input.reminderMinutes ?? 60,
-      })
+      .insert(insertPayload)
       .select(scheduleSelect)
       .single();
 
     if (error) {
-      throw error;
+      // Jika join select gagal, coba dengan select(*) sederhana
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("subject_schedules")
+        .insert(insertPayload)
+        .select("*")
+        .single();
+
+      if (fallbackError) {
+        throw new Error(fallbackError.message || error.message);
+      }
+
+      return mapSchedule(fallbackData);
     }
 
     return mapSchedule(data);
   },
+
 
   async update(input: UpdateScheduleInput): Promise<Schedule> {
     const updateData: Record<string, unknown> = {};

@@ -32,6 +32,9 @@ export interface DatePickerFieldProps {
   error?: string | null;
   style?: StyleProp<ViewStyle>;
   required?: boolean;
+  showWeekday?: boolean;
+  clearable?: boolean;
+  onClear?: () => void;
 }
 
 export function DatePickerField({
@@ -45,6 +48,9 @@ export function DatePickerField({
   error,
   style,
   required = false,
+  showWeekday = false,
+  clearable = false,
+  onClear,
 }: DatePickerFieldProps) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -72,7 +78,9 @@ export function DatePickerField({
     onChange(tempIosDate, formatDateToYMD(tempIosDate));
   };
 
-  const displayValue = value ? formatDisplayDate(value) : '';
+  const displayValue = value
+    ? formatDisplayDate(value, { includeWeekday: showWeekday })
+    : '';
 
   return (
     <View style={[styles.container, style]}>
@@ -113,12 +121,29 @@ export function DatePickerField({
           </Text>
         </View>
 
-        <Ionicons
-          name="chevron-down"
-          size={16}
-          color={COLORS.goldText}
-          style={styles.chevron}
-        />
+        {clearable && Boolean(value) && onClear ? (
+          <Pressable
+            hitSlop={8}
+            onPress={(e) => {
+              e.stopPropagation();
+              onClear();
+            }}
+            style={styles.clearBtn}
+          >
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={COLORS.goldText}
+            />
+          </Pressable>
+        ) : (
+          <Ionicons
+            name="chevron-down"
+            size={16}
+            color={COLORS.goldText}
+            style={styles.chevron}
+          />
+        )}
       </Pressable>
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -243,6 +268,10 @@ const styles = StyleSheet.create({
   chevron: {
     marginLeft: 8,
     opacity: 0.7,
+  },
+  clearBtn: {
+    marginLeft: 8,
+    padding: 2,
   },
   errorText: {
     fontFamily: FONTS.regular,

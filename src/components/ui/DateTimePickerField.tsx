@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Pressable,
   StyleProp,
   StyleSheet,
   Text,
@@ -33,6 +34,9 @@ export interface DateTimePickerFieldProps {
   style?: StyleProp<ViewStyle>;
   required?: boolean;
   showPreview?: boolean;
+  showWeekday?: boolean;
+  clearable?: boolean;
+  onClear?: () => void;
 }
 
 export function DateTimePickerField({
@@ -50,11 +54,14 @@ export function DateTimePickerField({
   style,
   required = false,
   showPreview = false,
+  showWeekday = false,
+  clearable = false,
+  onClear,
 }: DateTimePickerFieldProps) {
   const currentDate = value ? (value instanceof Date ? value : new Date(value)) : null;
 
   const handleDateChange = (newDate: Date) => {
-    const combined = combineDateAndTime(newDate, currentDate);
+    const combined = combineDateAndTime(newDate, currentDate, true);
     onChange(combined, combined.toISOString());
   };
 
@@ -67,10 +74,18 @@ export function DateTimePickerField({
   return (
     <View style={[styles.container, style]}>
       {label ? (
-        <Text style={styles.sectionLabel}>
-          {label}
-          {required ? <Text style={styles.required}> *</Text> : null}
-        </Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.sectionLabel}>
+            {label}
+            {required ? <Text style={styles.required}> *</Text> : null}
+          </Text>
+
+          {clearable && Boolean(value) && onClear ? (
+            <Pressable hitSlop={8} onPress={onClear} disabled={disabled}>
+              <Text style={styles.clearBtnText}>Hapus</Text>
+            </Pressable>
+          ) : null}
+        </View>
       ) : null}
 
       <View style={styles.row}>
@@ -83,6 +98,7 @@ export function DateTimePickerField({
             minimumDate={minimumDate}
             maximumDate={maximumDate}
             disabled={disabled}
+            showWeekday={showWeekday}
           />
         </View>
 
@@ -115,11 +131,21 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 8,
   },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
   sectionLabel: {
     fontFamily: FONTS.semiBold,
     fontSize: 14,
     color: COLORS.goldText,
-    marginBottom: 10,
+  },
+  clearBtnText: {
+    fontFamily: FONTS.medium,
+    fontSize: 12,
+    color: '#FF6B6B',
   },
   required: {
     color: '#FF6B6B',

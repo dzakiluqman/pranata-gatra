@@ -81,7 +81,7 @@ export default function SubjectsScreen() {
     <View style={styles.card}>
       <Pressable
         onPress={() =>
-          router.push(`/(app)/workspace/${workspaceId}/subject/${item.id}` as any)
+          router.push(`/workspace/subject/${item.id}` as any)
         }
         style={({ pressed }) => [
           styles.cardContent,
