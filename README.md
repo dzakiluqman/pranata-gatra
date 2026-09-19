@@ -1,56 +1,56 @@
-# Welcome to your Expo app 👋
+# 📋 Pranata Gatra
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+> **One place to manage your tasks, schedules, and collaborative workspaces.**
+> Organize your academic activities, projects, and daily responsibilities in one mobile application.
 
-## Get started
+## 📖 About the System
 
-1. Install dependencies
+Pranata Gatra is a mobile productivity application designed to help users manage tasks, schedules, subjects, and collaborative activities in one centralized platform.
 
-   ```bash
-   npm install
-   ```
+The system uses **Workspaces** as flexible collaborative environments that can be used for various purposes, including academic activities, personal projects, and team-based work. Users can create Workspaces, manage Tasks and Subjects, organize schedules, invite other users, and assign tasks to Workspace members.
 
-2. Start the app
+Pranata Gatra also provides **push notifications** to keep users informed about important activities such as Workspace invitations, upcoming task deadlines, and scheduled subjects.
 
-   ```bash
-   npx expo start
-   ```
+## ✨ Key Features
 
-In the output, you'll find options to open the app in a
+* **🔐 Email Authentication:** Secure registration and sign-in using email authentication with OTP verification.
+* **🏠 Workspace Management:** Create and manage flexible Workspaces for academic activities, projects, or collaborative work.
+* **👥 Workspace Collaboration:** Invite other users via email and manage Workspace members based on their assigned roles.
+* **📋 Task Management:** Create, update, and organize tasks within Workspaces, including assigning tasks to Workspace members.
+* **📚 Subject Management:** Create and manage Subjects within a Workspace for organizing academic activities.
+* **🗓️ Schedule Management:** Configure Subject schedules and view upcoming schedules across accessible Workspaces.
+* **🔔 Push Notifications:** Receive notifications for Workspace invitations, task deadline reminders, and scheduled Subjects.
+* **⚡ Automatic Task Priority:** Automatically determine task priority based on the proximity of its deadline to help users focus on upcoming responsibilities.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## 🛠️ Tech Stack
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+* **Mobile:** React Native, Expo
+* **Language:** TypeScript
+* **Navigation:** Expo Router
+* **Backend:** Supabase
+* **Database:** PostgreSQL
+* **Authentication:** Supabase Auth
+* **Push Notifications:** Expo Notifications
+* **Build & Deployment:** Expo Application Services (EAS)
 
-## Get a fresh project
+## 🗺️ Roadmap (Future Plans)
 
-When you're ready, run:
+Pranata Gatra will continue to evolve with additional features and improvements focused on productivity, collaboration, and user experience.
 
-```bash
-npm run reset-project
-```
+- [ ] Enhanced push notification and reminder system.
+- [ ] Advanced Workspace collaboration features.
+- [ ] Task search and filtering.
+- [ ] Workspace task progress and productivity statistics.
+- [ ] Improved user experience across Android and iOS.
+- [ ] Additional productivity and task management features.
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 📱 Platform
 
-### Other setup steps
+Pranata Gatra is being developed for:
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- [x] Android
+- [x] iOS (Soon)
 
-## Learn more
+## 📄 License
 
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Distributed under the MIT License. See `LICENSE` for more information.
