@@ -112,6 +112,64 @@ export const scheduleService = {
     return (data ?? []).map(mapSchedule);
   },
 
+  async getByUserWorkspaces(workspaceId?: string): Promise<Schedule[]> {
+    if (workspaceId && workspaceId !== "all") {
+      return this.getByWorkspace(workspaceId);
+    }
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      throw userError;
+    }
+
+    if (!user) {
+      return [];
+    }
+
+    const [ownedRes, memberRes] = await Promise.all([
+      supabase
+        .from("workspaces")
+        .select("id")
+        .eq("owner_id", user.id),
+      supabase
+        .from("workspace_members")
+        .select("workspace_id")
+        .eq("user_id", user.id),
+    ]);
+
+    const workspaceIds = Array.from(
+      new Set([
+        ...(ownedRes.data ?? []).map((w) => w.id),
+        ...(memberRes.data ?? []).map((m) => m.workspace_id),
+      ]),
+    );
+
+    if (workspaceIds.length === 0) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("subject_schedules")
+      .select(scheduleSelect)
+      .in("workspace_id", workspaceIds)
+      .order("start_date", {
+        ascending: true,
+      })
+      .order("start_time", {
+        ascending: true,
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return (data ?? []).map(mapSchedule);
+  },
+
   async create(input: CreateScheduleInput): Promise<Schedule> {
     const insertPayload: Record<string, any> = {
       subject_id: input.subjectId,

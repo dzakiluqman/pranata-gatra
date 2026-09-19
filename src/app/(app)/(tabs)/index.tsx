@@ -246,11 +246,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<
-    string | undefined
-  >(undefined);
 
-  const { data: todaySchedules = [] } = useTodaySchedules(currentWorkspaceId);
+  const { data: todaySchedules = [], refetch: refetchTodaySchedules } =
+    useTodaySchedules();
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -265,10 +263,7 @@ export default function Dashboard() {
 
       const dashboardData = await fetchDashboardData(user.id);
       setData(dashboardData);
-
-      if (dashboardData.workspaces.length > 0) {
-        setCurrentWorkspaceId(dashboardData.workspaces[0].id);
-      }
+      refetchTodaySchedules();
     } catch (err) {
       console.error('[Dashboard] Failed to load:', err);
       setError(err instanceof Error ? err.message : 'Gagal memuat dashboard.');
@@ -276,7 +271,7 @@ export default function Dashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [refetchTodaySchedules]);
 
   useFocusEffect(
     useCallback(() => {

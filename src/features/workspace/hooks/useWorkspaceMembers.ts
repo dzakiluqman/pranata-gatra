@@ -75,6 +75,18 @@ export function useMyWorkspaceInvitations() {
       queryClient.invalidateQueries({
         queryKey: ["workspaces"],
       });
+
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-members"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["schedules"],
+      });
+
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
     },
   });
 
@@ -97,5 +109,36 @@ export function useMyWorkspaceInvitations() {
     declineInvitation: declineMutation.mutateAsync,
     isAccepting: acceptMutation.isPending,
     isDeclining: declineMutation.isPending,
+    refetch: invitationsQuery.refetch,
+  };
+}
+
+export function useLeaveWorkspace() {
+  const queryClient = useQueryClient();
+
+  const leaveMutation = useMutation({
+    mutationFn: (workspaceId: string) =>
+      workspaceMemberService.leaveWorkspace(workspaceId),
+
+    onSuccess: (_, workspaceId) => {
+      queryClient.invalidateQueries({
+        queryKey: ["workspaces"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["workspace-members", workspaceId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["schedules"],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["tasks"],
+      });
+    },
+  });
+
+  return {
+    leaveWorkspace: leaveMutation.mutateAsync,
+    isLeaving: leaveMutation.isPending,
+    error: leaveMutation.error,
   };
 }

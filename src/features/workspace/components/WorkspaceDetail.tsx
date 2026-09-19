@@ -17,8 +17,10 @@ type WorkspaceDetailProps = {
   workspace: Workspace | null;
   isLoading: boolean;
   error: Error | null;
+  isOwner?: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onLeave?: () => void;
   onSubjects: () => void;
   onTasks: () => void;
   onMembers: () => void;
@@ -28,8 +30,10 @@ export function WorkspaceDetail({
   workspace,
   isLoading,
   error,
+  isOwner = true,
   onEdit,
   onDelete,
+  onLeave,
   onSubjects,
   onTasks,
   onMembers,
@@ -156,29 +160,44 @@ export function WorkspaceDetail({
         </Pressable>
       </View>
 
-      {/* Action Buttons: Edit / Delete */}
+      {/* Action Buttons: Edit / Delete or Leave */}
       <View style={styles.actionRow}>
-        <Pressable
-          onPress={onEdit}
-          style={({ pressed }) => [
-            styles.editButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Ionicons name="create-outline" size={16} color={COLORS.goldText} />
-          <Text style={styles.editButtonText}>Edit</Text>
-        </Pressable>
+        {isOwner && (
+          <Pressable
+            onPress={onEdit}
+            style={({ pressed }) => [
+              styles.editButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="create-outline" size={16} color={COLORS.goldText} />
+            <Text style={styles.editButtonText}>Edit</Text>
+          </Pressable>
+        )}
 
-        <Pressable
-          onPress={onDelete}
-          style={({ pressed }) => [
-            styles.deleteButton,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
-          <Text style={styles.deleteButtonText}>Hapus</Text>
-        </Pressable>
+        {isOwner ? (
+          <Pressable
+            onPress={onDelete}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="trash-outline" size={16} color={COLORS.danger} />
+            <Text style={styles.deleteButtonText}>Hapus</Text>
+          </Pressable>
+        ) : (
+          <Pressable
+            onPress={onLeave}
+            style={({ pressed }) => [
+              styles.deleteButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="log-out-outline" size={16} color={COLORS.danger} />
+            <Text style={styles.deleteButtonText}>Keluar dari Workspace</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );

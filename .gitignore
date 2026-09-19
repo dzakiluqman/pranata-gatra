@@ -14,8 +14,10 @@ pnpm-debug.log
 .expo/
 dist/
 web-build/
-cache/
+/.cache/
+/cache/
 expo-env.d.ts
+
 
 *.pem
 *.keystore

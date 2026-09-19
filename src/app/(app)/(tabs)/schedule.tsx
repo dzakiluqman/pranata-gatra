@@ -179,13 +179,16 @@ export default function ScheduleScreen() {
     }
 
     result.sort((a, b) => {
+      const aDateStr = `${a.date.getFullYear()}-${String(a.date.getMonth() + 1).padStart(2, '0')}-${String(a.date.getDate()).padStart(2, '0')}`;
+      const bDateStr = `${b.date.getFullYear()}-${String(b.date.getMonth() + 1).padStart(2, '0')}-${String(b.date.getDate()).padStart(2, '0')}`;
+
       const first = parseDateTime(
-        a.date.toISOString().slice(0, 10),
+        aDateStr,
         a.schedule.startTime,
       );
 
       const second = parseDateTime(
-        b.date.toISOString().slice(0, 10),
+        bDateStr,
         b.schedule.startTime,
       );
 

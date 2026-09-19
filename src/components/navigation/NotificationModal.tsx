@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useQueryClient } from '@tanstack/react-query';
 
 import { COLORS, FONTS } from '@/constants/theme';
 import { workspaceMemberService } from '@/features/workspace/services/workspaceMemberService';
@@ -52,6 +53,7 @@ export default function NotificationModal({
   onNotificationCountChange,
 }: NotificationModalProps) {
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
   const [invitations, setInvitations] = useState<WorkspaceInvitation[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
@@ -67,6 +69,8 @@ export default function NotificationModal({
         onNotificationCountChange?.(0);
         return;
       }
+
+      const cleanEmail = user.email.trim().toLowerCase();
 
       const { data, error } = await supabase
         .from('workspace_invitations')
@@ -91,7 +95,7 @@ export default function NotificationModal({
               avatar_url
             )
           `)
-        .eq('invitee_email', user.email)
+        .ilike('invitee_email', cleanEmail)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -125,8 +129,13 @@ export default function NotificationModal({
       setActionLoadingId(invitation.id);
       await workspaceMemberService.acceptInvitation(invitation.id);
 
-      setInvitations((prev) => prev.filter((item) => item.id !== invitation.id));
-      onNotificationCountChange?.(Math.max(0, invitations.length - 1));
+      queryClient.invalidateQueries({ queryKey: ['workspaces'] });
+      queryClient.invalidateQueries({ queryKey: ['workspace-members'] });
+      queryClient.invalidateQueries({ queryKey: ['schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      queryClient.invalidateQueries({ queryKey: ['my-workspace-invitations'] });
+
+      await fetchInvitations();
       Alert.alert('Sukses', `Kamu telah bergabung dengan workspace "${invitation.workspace?.name || 'Workspace'}"!`);
     } catch (err) {
       Alert.alert('Gagal', err instanceof Error ? err.message : 'Gagal menerima undangan.');
@@ -140,8 +149,8 @@ export default function NotificationModal({
       setActionLoadingId(invitation.id);
       await workspaceMemberService.declineInvitation(invitation.id);
 
-      setInvitations((prev) => prev.filter((item) => item.id !== invitation.id));
-      onNotificationCountChange?.(Math.max(0, invitations.length - 1));
+      queryClient.invalidateQueries({ queryKey: ['my-workspace-invitations'] });
+      await fetchInvitations();
     } catch (err) {
       Alert.alert('Gagal', err instanceof Error ? err.message : 'Gagal menolak undangan.');
     } finally {

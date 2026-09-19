@@ -420,11 +420,13 @@ export const workspaceMemberService = {
       return [];
     }
 
+    const cleanEmail = user.email.trim().toLowerCase();
+
     const { data, error } = await supabase
       .from("workspace_invitations")
       .select(INVITATION_SELECT)
       .eq("status", "pending")
-      .ilike("invitee_email", user.email)
+      .ilike("invitee_email", cleanEmail)
       .order("created_at", {
         ascending: false,
       });
@@ -451,7 +453,7 @@ export const workspaceMemberService = {
     }
 
     // 1. Coba panggil RPC accept_workspace_invitation
-    let rpcSucceeded = false;
+    let rpcFound = true;
     try {
       const { data, error } = await supabase.rpc(
         "accept_workspace_invitation",
@@ -460,26 +462,37 @@ export const workspaceMemberService = {
         },
       );
 
-      if (!error && (data === null || data?.success !== false)) {
-        rpcSucceeded = true;
+      if (error) {
+        if (
+          error.message.includes("Could not find the function") ||
+          error.code === "PGRST202"
+        ) {
+          rpcFound = false;
+        } else {
+          throw new Error(error.message);
+        }
+      } else if (data) {
+        if (data.success === false) {
+          throw new Error(data.error || "Gagal menerima undangan.");
+        }
         return;
-      }
-      if (error && !error.message.includes("Could not find the function")) {
-        // Jika RPC ada tapi melempar error spesifik
-        throw new Error(error.message);
+      } else {
+        return;
       }
     } catch (rpcErr: any) {
       if (
         rpcErr?.message &&
-        !rpcErr.message.includes("Could not find the function") &&
-        !rpcErr.message.includes("function public.accept_workspace_invitation")
+        (rpcErr.message.includes("Could not find the function") ||
+          rpcErr.code === "PGRST202")
       ) {
+        rpcFound = false;
+      } else {
         throw rpcErr;
       }
     }
 
     // 2. Fallback: Langsung lakukan insert ke workspace_members dan update workspace_invitations
-    if (!rpcSucceeded) {
+    if (!rpcFound) {
       const { data: invitation, error: fetchError } = await supabase
         .from("workspace_invitations")
         .select("workspace_id, role, invitee_email")
@@ -492,21 +505,30 @@ export const workspaceMemberService = {
         );
       }
 
-      // Masukkan member
-      const { error: memberError } = await supabase
+      // Masukkan member (idempotent: cek dulu apakah sudah ada)
+      const { data: existingMember } = await supabase
         .from("workspace_members")
-        .insert({
-          workspace_id: invitation.workspace_id,
-          user_id: user.id,
-          role: invitation.role || "member",
-        });
+        .select("id")
+        .eq("workspace_id", invitation.workspace_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
 
-      if (
-        memberError &&
-        !memberError.message.toLowerCase().includes("unique") &&
-        !memberError.message.toLowerCase().includes("duplicate")
-      ) {
-        throw new Error(memberError.message);
+      if (!existingMember) {
+        const { error: memberError } = await supabase
+          .from("workspace_members")
+          .insert({
+            workspace_id: invitation.workspace_id,
+            user_id: user.id,
+            role: invitation.role || "editor",
+          });
+
+        if (
+          memberError &&
+          !memberError.message.toLowerCase().includes("unique") &&
+          !memberError.message.toLowerCase().includes("duplicate")
+        ) {
+          throw new Error(memberError.message);
+        }
       }
 
       // Update status undangan
@@ -521,6 +543,80 @@ export const workspaceMemberService = {
       if (updateError) {
         throw new Error(updateError.message);
       }
+    }
+  },
+
+  async leaveWorkspace(workspaceId: string): Promise<void> {
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError) {
+      throw new Error(userError.message);
+    }
+
+    if (!user) {
+      throw new Error("User is not authenticated.");
+    }
+
+    // Cek apakah user adalah owner
+    const { data: workspace, error: wsError } = await supabase
+      .from("workspaces")
+      .select("owner_id")
+      .eq("id", workspaceId)
+      .maybeSingle();
+
+    if (wsError) {
+      throw new Error(wsError.message);
+    }
+
+    if (workspace?.owner_id === user.id) {
+      throw new Error(
+        "Owner tidak dapat keluar dari workspace miliknya sendiri. Gunakan opsi Hapus Workspace.",
+      );
+    }
+
+    // Coba via RPC leave_workspace
+    try {
+      const { data, error } = await supabase.rpc("leave_workspace", {
+        p_workspace_id: workspaceId,
+      });
+
+      if (!error && (data === null || data?.success !== false)) {
+        return;
+      }
+
+      if (data?.success === false) {
+        throw new Error(data.error || "Gagal keluar dari workspace.");
+      }
+
+      if (
+        error &&
+        !error.message.includes("Could not find the function") &&
+        error.code !== "PGRST202"
+      ) {
+        throw new Error(error.message);
+      }
+    } catch (rpcErr: any) {
+      if (
+        rpcErr?.message &&
+        !rpcErr.message.includes("Could not find the function") &&
+        rpcErr.code !== "PGRST202"
+      ) {
+        throw rpcErr;
+      }
+    }
+
+    // Fallback: direct delete from workspace_members
+    const { error: deleteError } = await supabase
+      .from("workspace_members")
+      .delete()
+      .eq("workspace_id", workspaceId)
+      .eq("user_id", user.id);
+
+    if (deleteError) {
+      throw new Error(deleteError.message);
     }
   },
 

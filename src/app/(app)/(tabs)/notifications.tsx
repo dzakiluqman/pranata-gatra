@@ -60,11 +60,9 @@ export default function NotificationsScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [currentWorkspaceId, setCurrentWorkspaceId] = useState<
-    string | undefined
-  >(undefined);
 
-  const { data: todaySchedules = [] } = useTodaySchedules(currentWorkspaceId);
+  const { data: todaySchedules = [], refetch: refetchTodaySchedules } =
+    useTodaySchedules();
 
   const loadNotifications = useCallback(async () => {
     try {
@@ -79,9 +77,10 @@ export default function NotificationsScreen() {
 
       if (!user?.email) {
         setInvitations([]);
-        setCurrentWorkspaceId(undefined);
         return;
       }
+
+      const cleanEmail = user.email.trim().toLowerCase();
 
       // Load invitations
       const { data: invitationData, error: invitationError } = await supabase
@@ -111,7 +110,7 @@ export default function NotificationsScreen() {
               )
             `,
         )
-        .ilike("invitee_email", user.email)
+        .ilike("invitee_email", cleanEmail)
         .eq("status", "pending")
         .order("created_at", {
           ascending: false,
@@ -154,35 +153,7 @@ export default function NotificationsScreen() {
       }));
 
       setInvitations(normalizedInvitations);
-
-      // Fetch user's workspaces to set current workspace for schedules
-      const { data: ownedWorkspaces, error: ownedWorkspaceError } =
-        await supabase.from("workspaces").select("id").eq("owner_id", user.id);
-
-      if (ownedWorkspaceError) {
-        throw ownedWorkspaceError;
-      }
-
-      const { data: memberships, error: membershipError } = await supabase
-        .from("workspace_members")
-        .select("workspace_id")
-        .eq("user_id", user.id);
-
-      if (membershipError) {
-        throw membershipError;
-      }
-
-      const workspaceIds = Array.from(
-        new Set([
-          ...(ownedWorkspaces ?? []).map((workspace) => workspace.id),
-          ...(memberships ?? []).map((membership) => membership.workspace_id),
-        ]),
-      );
-
-      // Set first workspace to load schedules
-      if (workspaceIds.length > 0) {
-        setCurrentWorkspaceId(workspaceIds[0]);
-      }
+      refetchTodaySchedules();
     } catch (error) {
       console.error("Failed to load notifications:", error);
 
@@ -196,7 +167,7 @@ export default function NotificationsScreen() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [refetchTodaySchedules]);
 
   useFocusEffect(
     useCallback(() => {
@@ -218,12 +189,15 @@ export default function NotificationsScreen() {
       setProcessingId(invitation.id);
       await workspaceMemberService.acceptInvitation(invitation.id);
 
-      setInvitations((current) =>
-        current.filter((item) => item.id !== invitation.id),
-      );
-
+      // Invalidate queries so all dependent views refetch from DB
       queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["workspace-members"] });
       queryClient.invalidateQueries({ queryKey: ["my-workspace-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["schedules"] });
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+
+      // Refresh source of truth from database
+      await loadNotifications();
 
       Alert.alert(
         "Invitation Diterima",
@@ -264,11 +238,8 @@ export default function NotificationsScreen() {
               setProcessingId(invitation.id);
               await workspaceMemberService.declineInvitation(invitation.id);
 
-              setInvitations((current) =>
-                current.filter((item) => item.id !== invitation.id),
-              );
-
               queryClient.invalidateQueries({ queryKey: ["my-workspace-invitations"] });
+              await loadNotifications();
 
               Alert.alert(
                 "Invitation Ditolak",

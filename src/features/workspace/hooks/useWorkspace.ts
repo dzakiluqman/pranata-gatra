@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
+import { workspaceMemberService } from '../services/workspaceMemberService';
 import {
   deleteWorkspace,
   getWorkspaceById,
@@ -77,6 +78,11 @@ export function useWorkspace(workspaceId: string) {
     setWorkspace(null);
   };
 
+  const leaveWorkspace = async () => {
+    await workspaceMemberService.leaveWorkspace(workspaceId);
+    setWorkspace(null);
+  };
+
   return {
     workspace,
     isLoading,
@@ -84,5 +90,6 @@ export function useWorkspace(workspaceId: string) {
     refresh: fetchWorkspace,
     editWorkspace,
     removeWorkspace,
+    leaveWorkspace,
   };
 }

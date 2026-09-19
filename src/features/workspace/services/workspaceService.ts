@@ -27,27 +27,83 @@ function mapWorkspace(row: WorkspaceRow): Workspace {
 }
 
 export async function getWorkspaces(): Promise<Workspace[]> {
-  const { data, error } = await supabase
-    .from('workspaces')
-    .select(
-      `
-        id,
-        owner_id,
-        name,
-        description,
-        created_at,
-        updated_at
-      `,
-    )
-    .order('created_at', {
-      ascending: false,
-    });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (error) {
-    throw error;
+  if (!user) {
+    return [];
   }
 
-  return (data as WorkspaceRow[]).map(mapWorkspace);
+  // Ambil workspace milik sendiri dan membership secara paralel
+  const [ownedResult, memberResult, directResult] = await Promise.all([
+    supabase
+      .from('workspaces')
+      .select(
+        `
+          id,
+          owner_id,
+          name,
+          description,
+          created_at,
+          updated_at
+        `,
+      )
+      .eq('owner_id', user.id)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('workspace_members')
+      .select('workspace_id')
+      .eq('user_id', user.id),
+    supabase
+      .from('workspaces')
+      .select(
+        `
+          id,
+          owner_id,
+          name,
+          description,
+          created_at,
+          updated_at
+        `,
+      )
+      .order('created_at', { ascending: false }),
+  ]);
+
+  const memberWorkspaceIds = (memberResult.data ?? []).map((m) => m.workspace_id);
+  let memberWorkspaces: WorkspaceRow[] = [];
+
+  if (memberWorkspaceIds.length > 0) {
+    const { data: mData } = await supabase
+      .from('workspaces')
+      .select(
+        `
+          id,
+          owner_id,
+          name,
+          description,
+          created_at,
+          updated_at
+        `,
+      )
+      .in('id', memberWorkspaceIds)
+      .order('created_at', { ascending: false });
+
+    memberWorkspaces = (mData ?? []) as WorkspaceRow[];
+  }
+
+  const map = new Map<string, WorkspaceRow>();
+  for (const item of (directResult.data ?? []) as WorkspaceRow[]) {
+    map.set(item.id, item);
+  }
+  for (const item of (ownedResult.data ?? []) as WorkspaceRow[]) {
+    map.set(item.id, item);
+  }
+  for (const item of memberWorkspaces) {
+    map.set(item.id, item);
+  }
+
+  return Array.from(map.values()).map(mapWorkspace);
 }
 
 export async function getWorkspaceById(
@@ -157,6 +213,16 @@ export async function updateWorkspace(
 export async function deleteWorkspace(
   workspaceId: string,
 ): Promise<void> {
+  // Defense-in-depth: Hapus semua child data terkait workspace terlebih dahulu
+  // untuk menjamin tidak ada orphan tasks/data dan mencegah foreign key restriction error
+  await Promise.allSettled([
+    supabase.from('tasks').delete().eq('workspace_id', workspaceId),
+    supabase.from('subject_schedules').delete().eq('workspace_id', workspaceId),
+    supabase.from('subjects').delete().eq('workspace_id', workspaceId),
+    supabase.from('workspace_members').delete().eq('workspace_id', workspaceId),
+    supabase.from('workspace_invitations').delete().eq('workspace_id', workspaceId),
+  ]);
+
   const { error } = await supabase
     .from('workspaces')
     .delete()

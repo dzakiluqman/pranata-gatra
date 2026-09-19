@@ -6,14 +6,14 @@ import type { TodaySchedule } from "../types/schedule.types";
 
 import { getTodayDateString, isScheduleOnDate } from "../utils/recurrence";
 
-export function useTodaySchedules(workspaceId: string | undefined) {
+export function useTodaySchedules(workspaceId?: string) {
   const today = getTodayDateString();
 
   return useQuery({
-    queryKey: ["schedules", "today", workspaceId, today],
+    queryKey: ["schedules", "today", workspaceId ?? "all", today],
 
     queryFn: async (): Promise<TodaySchedule[]> => {
-      const schedules = await scheduleService.getByWorkspace(workspaceId!);
+      const schedules = await scheduleService.getByUserWorkspaces(workspaceId);
 
       const now = new Date();
 
@@ -34,7 +34,7 @@ export function useTodaySchedules(workspaceId: string | undefined) {
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
     },
 
-    enabled: !!workspaceId,
+    enabled: true,
 
     refetchInterval: 60_000,
   });

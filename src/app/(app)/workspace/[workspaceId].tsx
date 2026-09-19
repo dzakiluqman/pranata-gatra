@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -13,6 +13,7 @@ import AppHeader from '@/components/navigation/AppHeader';
 import { COLORS } from '@/constants/theme';
 import { useWorkspace } from '@/features/workspace';
 import { WorkspaceDetail } from '@/features/workspace/components/WorkspaceDetail';
+import { supabase } from '@/lib/supabase/client';
 
 export default function WorkspaceDetailScreen() {
   const router = useRouter();
@@ -21,8 +22,20 @@ export default function WorkspaceDetailScreen() {
     workspaceId: string;
   }>();
 
-  const { workspace, isLoading, error, removeWorkspace } =
+  const { workspace, isLoading, error, removeWorkspace, leaveWorkspace } =
     useWorkspace(workspaceId);
+
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setCurrentUserId(data?.user?.id ?? null);
+    });
+  }, []);
+
+  const isOwner = Boolean(
+    workspace && currentUserId && workspace.ownerId === currentUserId,
+  );
 
   const handleDelete = () => {
     Alert.alert(
@@ -46,6 +59,36 @@ export default function WorkspaceDetailScreen() {
                 err instanceof Error
                   ? err.message
                   : 'Gagal menghapus workspace.',
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleLeave = () => {
+    Alert.alert(
+      'Keluar dari Workspace',
+      `Apakah kamu yakin ingin keluar dari workspace "${workspace?.name}"?`,
+      [
+        {
+          text: 'Batal',
+          style: 'cancel',
+        },
+        {
+          text: 'Keluar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await leaveWorkspace();
+              router.replace('/(app)/(tabs)/workspace' as any);
+            } catch (err) {
+              Alert.alert(
+                'Gagal',
+                err instanceof Error
+                  ? err.message
+                  : 'Gagal keluar dari workspace.',
               );
             }
           },
@@ -97,8 +140,10 @@ export default function WorkspaceDetailScreen() {
             workspace={workspace}
             isLoading={isLoading}
             error={error}
+            isOwner={isOwner}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onLeave={handleLeave}
             onTasks={handleTasks}
             onSubjects={handleSubjects}
             onMembers={handleMembers}
