@@ -9,12 +9,10 @@ import { Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { Image, View } from 'react-native';
 
 import { usePushNotifications } from '@/lib/notifications';
 import { AppProvider } from '@/providers/AppProvider';
-
-SplashScreen.preventAutoHideAsync().catch(() => {});
 
 function RootContent() {
   usePushNotifications();
@@ -36,22 +34,24 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync().catch(() => {});
-    }
-  }, [fontsLoaded, fontError]);
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
 
   if (!fontsLoaded && !fontError) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: '#000000',
+          backgroundColor: '#FFFFFF',
           alignItems: 'center',
           justifyContent: 'center',
         }}
       >
-        <ActivityIndicator size="large" color="#B38D46" />
+        <Image
+          source={require('../../assets/images/pranata-splash-logo.png')}
+          style={{ width: 250, height: 80 }}
+          resizeMode="contain"
+        />
       </View>
     );
   }

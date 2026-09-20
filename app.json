@@ -12,6 +12,9 @@
       "bundleIdentifier": "com.dzakiluqman.pranatagatra",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
       }
     },
     "android": {
@@ -22,7 +25,8 @@
         "monochromeImage": "./assets/images/pranata-gatra-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.dzakiluqman.pranatagatra"
+      "package": "com.dzakiluqman.pranatagatra",
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "output": "static",
@@ -44,7 +48,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/icon.png",
+          "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#B38D46",
           "defaultChannel": "default",
           "enableBackgroundRemoteNotifications": true
@@ -60,6 +64,9 @@
       "eas": {
         "projectId": "8bd95e85-5453-4375-895f-1fe9c79de6f7"
       }
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8bd95e85-5453-4375-895f-1fe9c79de6f7"
     }
   }
 }
