@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -51,6 +52,7 @@ export default function AppHeader({
       user?.email?.split('@')[0] ||
       'User') as string;
   const firstName = fullName.split(' ')[0] || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
   // Check pending invitations for badge
   useEffect(() => {
@@ -115,7 +117,16 @@ export default function AppHeader({
         {/* User Section (Avatar + Name) */}
         <View style={styles.userSection}>
           <View style={styles.avatar}>
-            <Ionicons name="person" size={22} color="#4A3B18" />
+            {avatarUrl ? (
+              <Image
+                source={{ uri: avatarUrl }}
+                style={styles.avatarImage}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <Ionicons name="person" size={22} color="#4A3B18" />
+            )}
           </View>
 
           <View style={styles.textContainer}>
@@ -194,7 +205,16 @@ export default function AppHeader({
           >
             <View style={styles.menuHeader}>
               <View style={styles.menuAvatar}>
-                <Ionicons name="person" size={20} color={COLORS.primaryGold} />
+                {avatarUrl ? (
+                  <Image
+                    source={{ uri: avatarUrl }}
+                    style={styles.menuAvatarImage}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                ) : (
+                  <Ionicons name="person" size={20} color={COLORS.primaryGold} />
+                )}
               </View>
 
               <View style={styles.menuHeaderText}>
@@ -313,6 +333,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#EAD196',
     borderWidth: 1.5,
     borderColor: '#C6A152',
+    overflow: 'hidden',
+  },
+  avatarImage: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
   },
   textContainer: {
     marginLeft: 12,
@@ -403,6 +429,12 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.goldSoft,
     borderWidth: 1,
     borderColor: COLORS.goldBorder,
+    overflow: 'hidden',
+  },
+  menuAvatarImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
   },
   menuHeaderText: {
     marginLeft: 12,

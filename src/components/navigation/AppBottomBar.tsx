@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname, useRouter } from 'expo-router';
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { COLORS } from '@/constants/theme';
@@ -78,37 +79,59 @@ export default function AppBottomBar({ activeTab: explicitActiveTab, onTabPress 
         },
       ]}
     >
-      <View style={styles.dock}>
-        {TABS.map((tab) => {
-          const isActive = currentActiveTab === tab.key;
+      {/* Outer shadow container to preserve drop shadow while BlurView clips content */}
+      <View style={styles.dockShadow}>
+        <BlurView
+          intensity={Platform.OS === 'ios' ? 75 : 85}
+          tint="dark"
+          style={styles.dockBlur}
+        >
+          {/* Subtle liquid glass specular highlight shine */}
+          <LinearGradient
+            colors={[
+              'rgba(255, 232, 179, 0.16)',
+              'rgba(255, 255, 255, 0.03)',
+              'rgba(18, 18, 22, 0.35)',
+            ]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
 
-          return (
-            <Pressable
-              key={tab.key}
-              onPress={() => handlePress(tab)}
-              style={({ pressed }) => [
-                styles.tabButton,
-                pressed && styles.pressed,
-              ]}
-              hitSlop={6}
-            >
-              {isActive ? (
-                <LinearGradient
-                  colors={COLORS.goldGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={styles.activeCircle}
+          <View style={styles.dockInner}>
+            {TABS.map((tab) => {
+              const isActive = currentActiveTab === tab.key;
+
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => handlePress(tab)}
+                  style={({ pressed }) => [
+                    styles.tabButton,
+                    pressed && styles.pressed,
+                  ]}
+                  hitSlop={6}
                 >
-                  <Ionicons name={tab.activeIcon} size={25} color={COLORS.textDark} />
-                </LinearGradient>
-              ) : (
-                <View style={styles.inactiveCircle}>
-                  <Ionicons name={tab.icon} size={25} color={COLORS.secondaryLightGold} />
-                </View>
-              )}
-            </Pressable>
-          );
-        })}
+                  {isActive ? (
+                    <LinearGradient
+                      colors={COLORS.goldGradient}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.activeCircle}
+                    >
+                      <Ionicons name={tab.activeIcon} size={25} color={COLORS.textDark} />
+                    </LinearGradient>
+                  ) : (
+                    <View style={styles.inactiveCircle}>
+                      <Ionicons name={tab.icon} size={24} color={COLORS.secondaryLightGold} />
+                    </View>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+        </BlurView>
       </View>
     </View>
   );
@@ -122,22 +145,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     zIndex: 99,
   },
-  dock: {
+  dockShadow: {
+    width: '100%',
+    borderRadius: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.5,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  dockBlur: {
     width: '100%',
     height: 72,
+    borderRadius: 40,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(14, 14, 18, 0.65)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 232, 179, 0.28)',
+  },
+  dockInner: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
     paddingHorizontal: 12,
-    borderRadius: 40,
-    backgroundColor: '#121215',
-    borderWidth: 1,
-    borderColor: COLORS.goldBorderSubtle,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 14,
-    elevation: 8,
   },
   tabButton: {
     alignItems: 'center',
@@ -149,19 +180,25 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#FFE8B3',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inactiveCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#121215',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderWidth: 1,
-    borderColor: COLORS.goldBorder,
+    borderColor: 'rgba(179, 141, 70, 0.3)',
   },
   pressed: {
     opacity: 0.8,
     transform: [{ scale: 0.95 }],
   },
 });
+

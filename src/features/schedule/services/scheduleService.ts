@@ -1,3 +1,7 @@
+import {
+  cancelScheduleReminders,
+  scheduleScheduleReminders,
+} from "@/lib/notifications";
 import { supabase } from "@/lib/supabase";
 
 import type {
@@ -203,10 +207,18 @@ export const scheduleService = {
         throw new Error(fallbackError.message || error.message);
       }
 
-      return mapSchedule(fallbackData);
+      const fallbackSchedule = mapSchedule(fallbackData);
+      scheduleScheduleReminders(fallbackSchedule).catch((err) =>
+        console.warn('[scheduleService] scheduleScheduleReminders failed:', err),
+      );
+      return fallbackSchedule;
     }
 
-    return mapSchedule(data);
+    const schedule = mapSchedule(data);
+    scheduleScheduleReminders(schedule).catch((err) =>
+      console.warn('[scheduleService] scheduleScheduleReminders failed:', err),
+    );
+    return schedule;
   },
 
 
@@ -260,7 +272,11 @@ export const scheduleService = {
       throw error;
     }
 
-    return mapSchedule(data);
+    const updatedSchedule = mapSchedule(data);
+    scheduleScheduleReminders(updatedSchedule).catch((err) =>
+      console.warn('[scheduleService] scheduleScheduleReminders failed:', err),
+    );
+    return updatedSchedule;
   },
 
   async remove(scheduleId: string): Promise<void> {
@@ -272,5 +288,9 @@ export const scheduleService = {
     if (error) {
       throw error;
     }
+
+    cancelScheduleReminders(scheduleId).catch((err) =>
+      console.warn('[scheduleService] cancelScheduleReminders failed:', err),
+    );
   },
 };

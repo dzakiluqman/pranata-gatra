@@ -11,11 +11,18 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Image, View } from 'react-native';
 
-import { usePushNotifications } from '@/lib/notifications';
+import {
+  requestNotificationPermissionsOnStartup,
+  usePushNotifications,
+} from '@/lib/notifications';
 import { AppProvider } from '@/providers/AppProvider';
 
 function RootContent() {
   usePushNotifications();
+
+  useEffect(() => {
+    requestNotificationPermissionsOnStartup();
+  }, []);
 
   return (
     <>

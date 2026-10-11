@@ -1,3 +1,4 @@
+import { cancelTaskReminders, scheduleTaskReminders } from "@/lib/notifications";
 import { supabase } from "@/lib/supabase";
 import type {
     CreateTaskInput,
@@ -258,7 +259,12 @@ export async function createTask(
     throw new Error(`Gagal membuat task: ${error.message}`);
   }
 
-  return mapTask(data);
+  const task = mapTask(data);
+  scheduleTaskReminders(task).catch((err) =>
+    console.warn('[taskService] scheduleTaskReminders failed:', err),
+  );
+
+  return task;
 }
 
 export async function updateTask(
@@ -333,7 +339,18 @@ export async function updateTask(
     throw new Error(`Gagal memperbarui task: ${error.message}`);
   }
 
-  return mapTask(data);
+  const updatedTask = mapTask(data);
+  if (updatedTask.status === "completed") {
+    cancelTaskReminders(updatedTask.id).catch((err) =>
+      console.warn('[taskService] cancelTaskReminders failed:', err),
+    );
+  } else {
+    scheduleTaskReminders(updatedTask).catch((err) =>
+      console.warn('[taskService] scheduleTaskReminders failed:', err),
+    );
+  }
+
+  return updatedTask;
 }
 
 export async function deleteTask(taskId: string): Promise<void> {
@@ -342,6 +359,10 @@ export async function deleteTask(taskId: string): Promise<void> {
   if (error) {
     throw new Error(`Gagal menghapus task: ${error.message}`);
   }
+
+  cancelTaskReminders(taskId).catch((err) =>
+    console.warn('[taskService] cancelTaskReminders failed:', err),
+  );
 }
 
 export async function updateTaskStatus(
@@ -365,7 +386,18 @@ export async function updateTaskStatus(
     throw new Error(`Gagal memperbarui status task: ${error.message}`);
   }
 
-  return mapTask(data);
+  const task = mapTask(data);
+  if (status === "completed") {
+    cancelTaskReminders(taskId).catch((err) =>
+      console.warn('[taskService] cancelTaskReminders failed:', err),
+    );
+  } else {
+    scheduleTaskReminders(task).catch((err) =>
+      console.warn('[taskService] scheduleTaskReminders failed:', err),
+    );
+  }
+
+  return task;
 }
 
 export async function completeTask(taskId: string): Promise<TaskWithRelations> {

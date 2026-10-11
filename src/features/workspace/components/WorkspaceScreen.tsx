@@ -11,6 +11,7 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AppHeader from '@/components/navigation/AppHeader';
 import { COLORS, FONTS } from '@/constants/theme';
@@ -19,7 +20,14 @@ import { useWorkspaces } from '../hooks/useWorkspaces';
 import type { Workspace } from '../types/workspace.types';
 
 export default function WorkspaceScreen() {
+  const insets = useSafeAreaInsets();
   const { workspaces = [], isLoading, error, refresh } = useWorkspaces();
+
+  // Calculate safe bottom offset above floating bottom navigation bar
+  // AppBottomBar dock is 72px high with Math.max(insets.bottom + 8, 16) bottom margin
+  const bottomBarMargin = Math.max(insets.bottom + 8, 16);
+  const bottomBarHeight = 72;
+  const fabBottom = bottomBarMargin + bottomBarHeight + 16;
 
   // Separate active vs expired workspaces
   const { activeWorkspaces, expiredWorkspaces } = useMemo(() => {
@@ -94,7 +102,10 @@ export default function WorkspaceScreen() {
             data={[]}
             renderItem={null}
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingBottom: fabBottom + 70 },
+            ]}
             refreshControl={
               <RefreshControl
                 refreshing={isLoading}
@@ -152,10 +163,13 @@ export default function WorkspaceScreen() {
         <Pressable
           style={({ pressed }) => [
             styles.fab,
+            { bottom: fabBottom },
             pressed && styles.fabPressed,
           ]}
           onPress={handleCreateWorkspace}
-          hitSlop={10}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          accessibilityRole="button"
+          accessibilityLabel="Buat Workspace Baru"
         >
           <LinearGradient
             colors={COLORS.goldGradient}
@@ -274,7 +288,6 @@ const styles = StyleSheet.create({
   fab: {
     position: 'absolute',
     right: 20,
-    bottom: 96,
     width: 58,
     height: 58,
     borderRadius: 29,
@@ -282,8 +295,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
-    elevation: 8,
-    zIndex: 90,
+    elevation: 10,
+    zIndex: 100,
   },
   fabGradient: {
     width: 58,
